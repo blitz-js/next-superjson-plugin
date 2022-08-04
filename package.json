@@ -19,7 +19,7 @@
     "main": "dist/next_superjson.wasm",
     "scripts": {
         "prepublishOnly": "cargo build --release",
-        "prepack": "npm ci && tsc && cargo prepublish --release && cp target/wasm32-wasi/release/next_superjson.wasm ./dist"
+        "prepack": "yarn && tsc && cargo prepublish --release && cp target/wasm32-wasi/release/next_superjson.wasm ./dist"
     },
     "files": [],
     "peerDependencies": {
