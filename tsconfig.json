@@ -1,0 +1,14 @@
+{
+  "include": ["tools"],
+  "compilerOptions": {
+    "declaration": true,
+    "sourceMap": true,
+    "target": "ES5",
+    "rootDir": "tools",
+    "outDir": "dist",
+    "strict": true,
+    "moduleResolution": "node",
+    "jsx": "react",
+    "skipLibCheck": true
+  }
+}

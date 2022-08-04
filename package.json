@@ -1,0 +1,38 @@
+{
+    "name": "next-superjson-plugin",
+    "version": "0.1.0",
+    "description": "SWC Plugin of SuperJSON for Next.js",
+    "author": "JH.Lee <contact@jins.dev>",
+    "homepage": "https://github.com/orionmiz/next-superjson-plugin#readme",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/orionmiz/next-superjson-plugin.git"
+    },
+    "bugs": {
+        "url": "https://github.com/orionmiz/next-superjson-plugin/issues",
+        "email": "contact@jins.dev"
+    },
+    "license": "MIT",
+    "keywords": [
+        "swc-plugin"
+    ],
+    "main": "dist/next_superjson.wasm",
+    "scripts": {
+        "prepublishOnly": "cargo build --release",
+        "prepack": "tsc && cargo prepublish --release && cp target/wasm32-wasi/release/next_superjson.wasm ./dist"
+    },
+    "files": [],
+    "peerDependencies": {
+        "next": ">=12.2.0",
+        "superjson": "^1"
+    },
+    "dependencies": {
+        "hoist-non-react-statics": "^3.3.2"
+    },
+    "devDependencies": {
+        "@types/hoist-non-react-statics": "^3.3.1",
+        "next": ">=12.2.0",
+        "superjson": "^1",
+        "typescript": "^4.7.4"
+    }
+}

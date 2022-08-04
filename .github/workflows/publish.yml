@@ -1,0 +1,58 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
+      - ci
+
+env:
+  RUST_LOG: debug
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          override: true
+
+      - name: Install wasm target
+        shell: bash
+        run: |
+          rustup target add wasm32-wasi
+
+      - name: Build plugin
+        shell: bash
+        run: npm run prepack
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "10.13"
+
+      - name: List files
+        shell: bash
+        run: |
+          ls -al target/wasm32-wasi/release
+      - name: Configure npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish npm packages
+        run: |
+          npm publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
