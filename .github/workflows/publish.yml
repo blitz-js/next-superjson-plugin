@@ -25,6 +25,10 @@ jobs:
           node-version: 16
           cache: yarn
 
+      - name: Install packages
+        shell: bash
+        run: yarn
+
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -38,7 +42,7 @@ jobs:
 
       - name: Build plugin
         shell: bash
-        run: npm run prepack
+        run: cargo build --release --target wasm32-wasi
         env:
           MACOSX_DEPLOYMENT_TARGET: "10.13"
 
