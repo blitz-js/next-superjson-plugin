@@ -1,6 +1,4 @@
-use swc_common::DUMMY_SP;
-
-use swc_plugin::ast::*;
+use swc_plugin::{ast::*, syntax_pos::DUMMY_SP};
 
 pub fn superjson_import_decl(superjson_import_name: &str) -> ModuleItem {
     ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {

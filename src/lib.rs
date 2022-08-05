@@ -1,9 +1,13 @@
 use std::ops::IndexMut;
 
 use serde::Deserialize;
-use swc_common::{util::take::Take, DUMMY_SP};
-use swc_ecmascript::utils::{prepend_stmt, ExprFactory};
-use swc_plugin::{ast::*, plugin_transform, TransformPluginProgramMetadata};
+use swc_plugin::{
+    ast::*,
+    metadata::TransformPluginProgramMetadata,
+    plugin_transform,
+    syntax_pos::DUMMY_SP,
+    utils::{prepend_stmt, take::Take, ExprFactory},
+};
 
 use utils::*;
 
@@ -955,7 +959,7 @@ impl NextSuperJsonTransformer {
 
 #[plugin_transform]
 pub fn process_transform(program: Program, _metadata: TransformPluginProgramMetadata) -> Program {
-    let config = serde_json::from_str::<Config>(&_metadata.plugin_config)
+    let config = serde_json::from_str::<Config>(&_metadata.get_transform_plugin_config().unwrap())
         .expect("Failed to parse plugin config");
 
     program.fold_with(&mut plugin(config))
