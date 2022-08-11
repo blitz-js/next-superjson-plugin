@@ -3,13 +3,13 @@
     "version": "0.2.0",
     "description": "SWC Plugin of SuperJSON for Next.js",
     "author": "JH.Lee <contact@jins.dev>",
-    "homepage": "https://github.com/orionmiz/next-superjson-plugin#readme",
+    "homepage": "https://github.com/blitz-js/next-superjson-plugin#readme",
     "repository": {
         "type": "git",
-        "url": "https://github.com/orionmiz/next-superjson-plugin.git"
+        "url": "https://github.com/blitz-js/next-superjson-plugin.git"
     },
     "bugs": {
-        "url": "https://github.com/orionmiz/next-superjson-plugin/issues",
+        "url": "https://github.com/blitz-js/next-superjson-plugin/issues",
         "email": "contact@jins.dev"
     },
     "license": "MIT",
