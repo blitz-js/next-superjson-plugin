@@ -2,9 +2,8 @@ name: Publish
 
 on:
   push:
-    branches:
-      - main
-      - ci
+    tags:
+      - '*'
 
 env:
   RUST_LOG: debug
