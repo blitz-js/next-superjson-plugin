@@ -1,9 +1,9 @@
-use std::ops::IndexMut;
+use std::{ops::IndexMut, path::{Path, Component}};
 
 use serde::Deserialize;
 use swc_plugin::{
     ast::*,
-    metadata::TransformPluginProgramMetadata,
+    metadata::{TransformPluginMetadataContextKind, TransformPluginProgramMetadata},
     plugin_transform,
     syntax_pos::DUMMY_SP,
     utils::{prepend_stmt, take::Take, ExprFactory},
@@ -962,5 +962,22 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
     let config = serde_json::from_str::<Config>(&_metadata.get_transform_plugin_config().unwrap())
         .expect("Failed to parse plugin config");
 
-    program.fold_with(&mut plugin(config))
+    match _metadata.get_context(&TransformPluginMetadataContextKind::Filename) {
+        Some(s) => {
+
+            let mut path = Path::new(&s).components();
+
+            // check file is under 'path' directory
+            let is_page = path.any(|cmp| match cmp {
+                Component::Normal(str) => str.to_str().unwrap_or_default() == "pages",
+                _ => false,
+            });
+
+            if is_page {
+                return program.fold_with(&mut plugin(config));
+            }
+            program
+        }
+        None => program,
+    }
 }
