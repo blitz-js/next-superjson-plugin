@@ -1,4 +1,7 @@
-use std::{ops::IndexMut, path::{Path, Component}};
+use std::{
+    ops::IndexMut,
+    path::{Component, Path},
+};
 
 use serde::Deserialize;
 use swc_plugin::{
@@ -964,11 +967,8 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
 
     match _metadata.get_context(&TransformPluginMetadataContextKind::Filename) {
         Some(s) => {
-
-            let mut path = Path::new(&s).components();
-
-            // check file is under 'path' directory
-            let is_page = path.any(|cmp| match cmp {
+            // check file is under 'pages' directory
+            let is_page = Path::new(&s.replace('\\', "/")).components().any(|cmp| match cmp {
                 Component::Normal(str) => str.to_str().unwrap_or_default() == "pages",
                 _ => false,
             });
