@@ -1,6 +1,6 @@
 {
     "name": "next-superjson-plugin",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "SWC Plugin of SuperJSON for Next.js",
     "author": "JH.Lee <contact@jins.dev>",
     "homepage": "https://github.com/blitz-js/next-superjson-plugin#readme",
