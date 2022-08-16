@@ -1,9 +1,9 @@
 name: Publish
 
 on:
-  push:
+  create:
     tags:
-      - '*'
+      - v*
 
 env:
   RUST_LOG: debug
