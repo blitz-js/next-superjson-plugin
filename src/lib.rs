@@ -36,16 +36,17 @@ static NEXT_SSG_PROPS_ORIG: &str = "_NEXT_SUPERJSON_SSG_PROPS";
 // export default wrap(_NEXT_SUPERJSON_IMPORTED_PAGE)
 static NEXT_PAGE_LOCAL: &str = "_NEXT_SUPERJSON_IMPORTED_PAGE";
 
+struct PositionHolder {
+    orig: Option<usize>,
+    decl: Option<usize>,
+    spec: Option<usize>,
+}
+
 struct NextSuperJsonTransformer {
     excluded: Vec<String>,
 
-    ssg_prop_export_pos: Option<usize>,
-    ssg_prop_export_decl_pos: Option<usize>,
-    ssg_prop_export_spec_pos: Option<usize>,
-
-    ssg_prop_ident_pos: Option<usize>,
-    ssg_prop_ident_decl_pos: Option<usize>,
-    ssg_prop_ident_spec_pos: Option<usize>,
+    props_export: PositionHolder,
+    props_ident: PositionHolder,
 
     skip_ssg_prop: bool,
 
@@ -70,13 +71,17 @@ pub fn transform(config: Config) -> impl VisitMut {
     NextSuperJsonTransformer {
         excluded: config.excluded,
 
-        ssg_prop_export_pos: Default::default(),
-        ssg_prop_export_decl_pos: Default::default(),
-        ssg_prop_export_spec_pos: Default::default(),
+        props_export: PositionHolder {
+            orig: None,
+            decl: None,
+            spec: None,
+        },
 
-        ssg_prop_ident_pos: Default::default(),
-        ssg_prop_ident_decl_pos: Default::default(),
-        ssg_prop_ident_spec_pos: Default::default(),
+        props_ident: PositionHolder {
+            orig: None,
+            decl: None,
+            spec: None,
+        },
 
         skip_ssg_prop: Default::default(),
 
@@ -93,7 +98,7 @@ impl VisitMut for NextSuperJsonTransformer {
     fn visit_mut_module_items(&mut self, items: &mut Vec<ModuleItem>) {
         self.find_ssg_prop(items);
 
-        if self.ssg_prop_export_pos.is_none() {
+        if self.props_export.orig.is_none() {
             return;
         }
 
@@ -106,8 +111,8 @@ impl VisitMut for NextSuperJsonTransformer {
         let mut new_items = vec![];
 
         for (pos, item) in items.iter_mut().enumerate() {
-            if self.ssg_prop_ident_pos.is_some()
-                && pos == self.ssg_prop_ident_pos.unwrap()
+            if self.props_ident.orig.is_some()
+                && pos == self.props_ident.orig.unwrap()
                 && !self.skip_ssg_prop
             {
                 match item {
@@ -167,9 +172,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         // =>
                         // const gSSP = wrap(.., excluded)
                         Decl::Var(var_decl) => {
-                            let v = var_decl
-                                .decls
-                                .index_mut(self.ssg_prop_ident_decl_pos.unwrap());
+                            let v = var_decl.decls.index_mut(self.props_ident.decl.unwrap());
 
                             v.init = Some(Box::new(Expr::Call(CallExpr {
                                 span: DUMMY_SP,
@@ -227,9 +230,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         // =>
                         // export const not_gSSP = wrap(..)
                         Decl::Var(var_decl) => {
-                            let v = var_decl
-                                .decls
-                                .index_mut(self.ssg_prop_ident_decl_pos.unwrap());
+                            let v = var_decl.decls.index_mut(self.props_ident.decl.unwrap());
 
                             v.init = Some(Box::new(Expr::Call(CallExpr {
                                 span: DUMMY_SP,
@@ -260,7 +261,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         specifiers, ..
                     })) => {
                         let s = specifiers
-                            .index_mut(self.ssg_prop_ident_spec_pos.unwrap())
+                            .index_mut(self.props_ident.spec.unwrap())
                             .as_mut_named()
                             .unwrap();
 
@@ -308,7 +309,7 @@ impl VisitMut for NextSuperJsonTransformer {
                     _ => {}
                 }
             } else {
-                if pos == self.ssg_prop_export_pos.unwrap() && !self.skip_ssg_prop {
+                if pos == self.props_export.orig.unwrap() && !self.skip_ssg_prop {
                     match item {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl {
                             decl: export_decl,
@@ -358,9 +359,8 @@ impl VisitMut for NextSuperJsonTransformer {
                                 // =>
                                 // export const gSSP = wrap(.., excluded)
                                 Decl::Var(var_decl) => {
-                                    let v = var_decl
-                                        .decls
-                                        .index_mut(self.ssg_prop_export_decl_pos.unwrap());
+                                    let v =
+                                        var_decl.decls.index_mut(self.props_export.decl.unwrap());
 
                                     v.init = Some(Box::new(Expr::Call(CallExpr {
                                         span: DUMMY_SP,
@@ -389,7 +389,7 @@ impl VisitMut for NextSuperJsonTransformer {
                             // export { _NEXT_SUPERJSON_SSG_PROPS as gSSP }
                             if let Some(src) = src {
                                 let s = specifiers
-                                    .index_mut(self.ssg_prop_export_spec_pos.unwrap())
+                                    .index_mut(self.props_export.spec.unwrap())
                                     .as_mut_named()
                                     .take()
                                     .unwrap();
@@ -439,10 +439,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                             type_args: Default::default(),
                                         }))),
                                         name: Pat::Ident(BindingIdent {
-                                            id: Ident::new(
-                                                NEXT_SSG_PROPS_ORIG.into(),
-                                                DUMMY_SP,
-                                            ),
+                                            id: Ident::new(NEXT_SSG_PROPS_ORIG.into(), DUMMY_SP),
                                             type_ann: None,
                                         }),
                                         span: DUMMY_SP,
@@ -471,7 +468,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                     },
                                 )));
 
-                                specifiers.remove(self.ssg_prop_export_spec_pos.unwrap());
+                                specifiers.remove(self.props_export.spec.unwrap());
 
                             // export { gSSP }
                             // export { not_gSSP as gSSP }
@@ -479,7 +476,7 @@ impl VisitMut for NextSuperJsonTransformer {
                             // export { _NEXT_SUPERJSON_SSG_PROPS as gSSP }
                             } else {
                                 let s = specifiers
-                                    .index_mut(self.ssg_prop_export_spec_pos.unwrap())
+                                    .index_mut(self.props_export.spec.unwrap())
                                     .as_mut_named()
                                     .unwrap();
 
@@ -494,7 +491,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                 // case 2: local
                                 // const gSSP = () => {}
                                 // => gSSP
-                                if self.ssg_prop_ident_spec_pos.is_some() {
+                                if self.props_ident.spec.is_some() {
                                     s.orig = ModuleExportName::Ident(Ident::new(
                                         NEXT_SSG_PROPS_ORIG.into(),
                                         DUMMY_SP,
@@ -726,10 +723,16 @@ impl VisitMut for NextSuperJsonTransformer {
 
         // TODO: these two stmts can be combined
         if !self.skip_ssg_prop {
-            prepend_stmt(&mut new_items, superjson_import_decl(SUPERJSON_PROPS_IMPORTED));
+            prepend_stmt(
+                &mut new_items,
+                superjson_import_decl(SUPERJSON_PROPS_IMPORTED),
+            );
         }
         if !self.skip_page {
-            prepend_stmt(&mut new_items, superjson_import_decl(SUPERJSON_PAGE_IMPORTED));
+            prepend_stmt(
+                &mut new_items,
+                superjson_import_decl(SUPERJSON_PAGE_IMPORTED),
+            );
         }
 
         *items = new_items;
@@ -763,16 +766,16 @@ impl NextSuperJsonTransformer {
     pub fn find_ssg_prop(&mut self, items: &mut Vec<ModuleItem>) {
         let mut ssg_prop_ident = None;
 
-        self.ssg_prop_export_pos = items.iter().position(|item| match item {
+        self.props_export.orig = items.iter().position(|item| match item {
             // check has ssg props
             ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => match decl {
                 Decl::Fn(fn_decl) => SSG_EXPORTS.contains(&&*fn_decl.ident.sym),
                 Decl::Var(var_decl) => {
-                    self.ssg_prop_export_decl_pos = var_decl.decls.iter().position(|decl| {
+                    self.props_export.decl = var_decl.decls.iter().position(|decl| {
                         SSG_EXPORTS.contains(&&*decl.name.as_ident().unwrap().sym)
                     });
 
-                    self.ssg_prop_export_decl_pos.is_some()
+                    self.props_export.decl.is_some()
                 }
                 _ => false,
             },
@@ -781,33 +784,32 @@ impl NextSuperJsonTransformer {
                 src,
                 ..
             })) => {
-                self.ssg_prop_export_spec_pos =
-                    specifiers.iter().position(|specifier| match specifier {
-                        ExportSpecifier::Named(ExportNamedSpecifier {
-                            orig: ModuleExportName::Ident(orig_id),
-                            exported,
-                            ..
-                        }) => {
-                            let exported_as = match exported {
-                                Some(ModuleExportName::Ident(exported_id)) => &exported_id.sym,
-                                _ => &orig_id.sym,
-                            };
+                self.props_export.spec = specifiers.iter().position(|specifier| match specifier {
+                    ExportSpecifier::Named(ExportNamedSpecifier {
+                        orig: ModuleExportName::Ident(orig_id),
+                        exported,
+                        ..
+                    }) => {
+                        let exported_as = match exported {
+                            Some(ModuleExportName::Ident(exported_id)) => &exported_id.sym,
+                            _ => &orig_id.sym,
+                        };
 
-                            if SSG_EXPORTS.contains(&&**exported_as) {
-                                self.skip_ssg_prop = src.is_some()
-                                    && (exported.is_none() || (&&**exported_as == &&*orig_id.sym));
+                        if SSG_EXPORTS.contains(&&**exported_as) {
+                            self.skip_ssg_prop = src.is_some()
+                                && (exported.is_none() || (&&**exported_as == &&*orig_id.sym));
 
-                                if !self.skip_ssg_prop {
-                                    ssg_prop_ident = Some((*orig_id.sym).to_string());
-                                }
-                                return true;
+                            if !self.skip_ssg_prop {
+                                ssg_prop_ident = Some((*orig_id.sym).to_string());
                             }
-                            false
+                            return true;
                         }
-                        _ => false,
-                    });
+                        false
+                    }
+                    _ => false,
+                });
 
-                self.ssg_prop_export_spec_pos.is_some()
+                self.props_export.spec.is_some()
             }
             _ => false,
         });
@@ -818,7 +820,7 @@ impl NextSuperJsonTransformer {
             while n > 0 {
                 n -= 1;
 
-                if self.ssg_prop_export_pos.unwrap() == n {
+                if self.props_export.orig.unwrap() == n {
                     continue;
                 }
 
@@ -834,7 +836,7 @@ impl NextSuperJsonTransformer {
                                 if assign.op == op!("=")
                                     && &*left.unwrap().sym == ssg_prop_ident.as_ref().unwrap()
                                 {
-                                    self.ssg_prop_ident_pos = Some(n);
+                                    self.props_ident.orig = Some(n);
                                     break;
                                 }
                             }
@@ -845,25 +847,25 @@ impl NextSuperJsonTransformer {
                     ModuleItem::Stmt(Stmt::Decl(decl)) => match decl {
                         Decl::Fn(fn_decl) => {
                             if &*fn_decl.ident.sym == ssg_prop_ident.as_ref().unwrap() {
-                                self.ssg_prop_ident_pos = Some(n);
+                                self.props_ident.orig = Some(n);
                                 break;
                             }
                         }
                         Decl::Var(var_decl) => {
-                            self.ssg_prop_ident_decl_pos = var_decl.decls.iter().position(|decl| {
+                            self.props_ident.decl = var_decl.decls.iter().position(|decl| {
                                 let id = decl.name.as_ident();
 
                                 if id.is_some()
                                     && &*id.unwrap().sym == ssg_prop_ident.as_ref().unwrap()
                                 {
-                                    self.ssg_prop_ident_pos = Some(n);
+                                    self.props_ident.orig = Some(n);
                                     return true;
                                 }
 
                                 false
                             });
 
-                            if self.ssg_prop_ident_decl_pos.is_some() {
+                            if self.props_ident.decl.is_some() {
                                 break;
                             }
                         }
@@ -878,25 +880,25 @@ impl NextSuperJsonTransformer {
                     })) => match export_decl {
                         Decl::Fn(fn_decl) => {
                             if &*fn_decl.ident.sym == ssg_prop_ident.as_ref().unwrap() {
-                                self.ssg_prop_ident_pos = Some(n);
+                                self.props_ident.orig = Some(n);
                                 break;
                             }
                         }
                         Decl::Var(var_decl) => {
-                            self.ssg_prop_ident_decl_pos = var_decl.decls.iter().position(|decl| {
+                            self.props_ident.decl = var_decl.decls.iter().position(|decl| {
                                 let id = decl.name.as_ident();
 
                                 if id.is_some()
                                     && &*id.unwrap().sym == ssg_prop_ident.as_ref().unwrap()
                                 {
-                                    self.ssg_prop_ident_pos = Some(n);
+                                    self.props_ident.orig = Some(n);
                                     return true;
                                 }
 
                                 false
                             });
 
-                            if self.ssg_prop_ident_decl_pos.is_some() {
+                            if self.props_ident.decl.is_some() {
                                 break;
                             }
                         }
@@ -906,7 +908,7 @@ impl NextSuperJsonTransformer {
                     ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
                         specifiers, ..
                     })) => {
-                        self.ssg_prop_ident_spec_pos = specifiers.iter().position(|specifier| {
+                        self.props_ident.spec = specifiers.iter().position(|specifier| {
                             if let ImportSpecifier::Named(ImportNamedSpecifier {
                                 local,
                                 imported,
@@ -922,14 +924,14 @@ impl NextSuperJsonTransformer {
                                         }
                                     }
 
-                                    self.ssg_prop_ident_pos = Some(n);
+                                    self.props_ident.orig = Some(n);
                                     return true;
                                 }
                             }
                             false
                         });
 
-                        if self.ssg_prop_ident_pos.is_some() {
+                        if self.props_ident.orig.is_some() {
                             break;
                         }
                     }
@@ -986,10 +988,12 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
     match _metadata.get_context(&TransformPluginMetadataContextKind::Filename) {
         Some(s) => {
             // check file is under 'pages' directory
-            let is_page = Path::new(&s.replace('\\', "/")).components().any(|cmp| match cmp {
-                Component::Normal(str) => str.to_str().unwrap_or_default() == "pages",
-                _ => false,
-            });
+            let is_page = Path::new(&s.replace('\\', "/"))
+                .components()
+                .any(|cmp| match cmp {
+                    Component::Normal(str) => str.to_str().unwrap_or_default() == "pages",
+                    _ => false,
+                });
 
             if is_page {
                 return program.fold_with(&mut plugin(config));
