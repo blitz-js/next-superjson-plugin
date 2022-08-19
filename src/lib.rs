@@ -255,26 +255,11 @@ impl VisitMut for NextSuperJsonTransformer {
                                     .take()
                                     .unwrap();
 
-                                new_items.push(ModuleItem::ModuleDecl(ModuleDecl::Import(
-                                    ImportDecl {
-                                        asserts: None,
-                                        span: DUMMY_SP,
-                                        specifiers: vec![ImportSpecifier::Named(
-                                            ImportNamedSpecifier {
-                                                imported: Some(s.orig.clone()),
-                                                is_type_only: false,
-                                                local: Ident::new(
-                                                    NEXT_SSG_PROPS_LOCAL.into(),
-                                                    DUMMY_SP,
-                                                ),
-                                                span: DUMMY_SP,
-                                            },
-                                        )],
-                                        // should clone
-                                        src: src.clone(),
-                                        type_only: false,
-                                    },
-                                )));
+                                new_items.push(temp_import_item(
+                                    s.orig.clone(),
+                                    NEXT_SSG_PROPS_LOCAL,
+                                    src,
+                                ));
 
                                 new_items.push(temp_props_item(self.excluded_expr()));
 
@@ -414,26 +399,11 @@ impl VisitMut for NextSuperJsonTransformer {
                             // import { unwrapped as _NEXT_SUPERJSON_IMPORTED_PAGE } from 'src'
                             // export default wrap(_NEXT_SUPERJSON_IMPORTED_PAGE)
                             if let Some(src) = src {
-                                new_items.push(ModuleItem::ModuleDecl(ModuleDecl::Import(
-                                    ImportDecl {
-                                        asserts: None,
-                                        span: DUMMY_SP,
-                                        specifiers: vec![ImportSpecifier::Named(
-                                            ImportNamedSpecifier {
-                                                imported: Some(s.orig.clone()),
-                                                is_type_only: false,
-                                                local: Ident::new(
-                                                    NEXT_PAGE_LOCAL.into(),
-                                                    DUMMY_SP,
-                                                ),
-                                                span: DUMMY_SP,
-                                            },
-                                        )],
-                                        // should clone
-                                        src: src.clone(),
-                                        type_only: false,
-                                    },
-                                )));
+                                new_items.push(temp_import_item(
+                                    s.orig.clone(),
+                                    NEXT_PAGE_LOCAL,
+                                    src,
+                                ));
 
                                 new_items.push(ModuleItem::ModuleDecl(
                                     ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {

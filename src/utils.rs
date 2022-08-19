@@ -57,6 +57,29 @@ pub fn temp_props_item(excluded: ExprOrSpread) -> ModuleItem {
     })))
 }
 
+pub fn temp_import_item(imported: ModuleExportName, local: &str, src: &mut Str) -> ModuleItem {
+    ModuleItem::ModuleDecl(ModuleDecl::Import(
+        ImportDecl {
+            asserts: None,
+            span: DUMMY_SP,
+            specifiers: vec![ImportSpecifier::Named(
+                ImportNamedSpecifier {
+                    imported: Some(imported),
+                    is_type_only: false,
+                    local: Ident::new(
+                        local.into(),
+                        DUMMY_SP,
+                    ),
+                    span: DUMMY_SP,
+                },
+            )],
+            // should clone
+            src: src.clone(),
+            type_only: false,
+        },
+    ))
+}
+
 pub trait Wrapper {
     fn wrap_props(self, excluded: ExprOrSpread) -> Box<Expr>;
     fn wrap_page(self) -> Box<Expr>;
