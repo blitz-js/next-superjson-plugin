@@ -20,11 +20,11 @@ static SSG_EXPORTS: &[&str; 2] = &["getStaticProps", "getServerSideProps"];
 
 // import { withSuperJSONProps as _withSuperJSONProps } from "next-superjson-plugin/tools";
 static SUPERJSON_PROPS_IMPORTED: &str = "withSuperJSONProps";
-pub static SUPERJSON_PROPS_LOCAL: &str = "_withSuperJSONProps";
+static SUPERJSON_PROPS_LOCAL: &str = "_withSuperJSONProps";
 
 // import { withSuperJSONPage as _withSuperJSONPage } from "next-superjson-plugin/tools";
 static SUPERJSON_PAGE_IMPORTED: &str = "withSuperJSONPage";
-pub static SUPERJSON_PAGE_LOCAL: &str = "_withSuperJSONPage";
+static SUPERJSON_PAGE_LOCAL: &str = "_withSuperJSONPage";
 
 // import { not_gSSP as _NEXT_SUPERJSON_IMPORTED_PROPS } from '..'
 // const  _NEXT_SUPERJSON_SSG_PROPS = wrap(_NEXT_SUPERJSON_IMPORTED_PROPS)
