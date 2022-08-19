@@ -204,26 +204,7 @@ impl VisitMut for NextSuperJsonTransformer {
 
                         new_items.push(item.take());
 
-                        new_items.push(ModuleItem::Stmt(Stmt::Decl(Decl::Var(VarDecl {
-                            declare: false,
-                            decls: vec![VarDeclarator {
-                                definite: false,
-                                init: Some(
-                                    Box::new(Expr::Ident(Ident::new(
-                                        NEXT_SSG_PROPS_LOCAL.into(),
-                                        DUMMY_SP,
-                                    )))
-                                    .wrap_props(self.excluded_expr()),
-                                ),
-                                name: Pat::Ident(BindingIdent {
-                                    id: Ident::new(NEXT_SSG_PROPS_ORIG.into(), DUMMY_SP),
-                                    type_ann: None,
-                                }),
-                                span: DUMMY_SP,
-                            }],
-                            kind: VarDeclKind::Const,
-                            span: DUMMY_SP,
-                        }))));
+                        new_items.push(temp_props_item(self.excluded_expr()));
                     }
                     _ => {}
                 }
@@ -295,26 +276,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                     },
                                 )));
 
-                                new_items.push(ModuleItem::Stmt(Stmt::Decl(Decl::Var(VarDecl {
-                                    declare: false,
-                                    decls: vec![VarDeclarator {
-                                        definite: false,
-                                        init: Some(
-                                            Box::new(Expr::Ident(Ident::new(
-                                                NEXT_SSG_PROPS_LOCAL.into(),
-                                                DUMMY_SP,
-                                            )))
-                                            .wrap_props(self.excluded_expr()),
-                                        ),
-                                        name: Pat::Ident(BindingIdent {
-                                            id: Ident::new(NEXT_SSG_PROPS_ORIG.into(), DUMMY_SP),
-                                            type_ann: None,
-                                        }),
-                                        span: DUMMY_SP,
-                                    }],
-                                    kind: VarDeclKind::Const,
-                                    span: DUMMY_SP,
-                                }))));
+                                new_items.push(temp_props_item(self.excluded_expr()));
 
                                 new_items.push(ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(
                                     NamedExport {

@@ -4,7 +4,7 @@ use swc_plugin::{
     utils::{take::Take, ExprFactory},
 };
 
-use crate::{SUPERJSON_PROPS_LOCAL, SUPERJSON_PAGE_LOCAL};
+use crate::{SUPERJSON_PROPS_LOCAL, SUPERJSON_PAGE_LOCAL, NEXT_SSG_PROPS_LOCAL, NEXT_SSG_PROPS_ORIG};
 
 pub fn superjson_import_decl(superjson_import_name: &str) -> ModuleItem {
     ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
@@ -32,6 +32,29 @@ pub fn superjson_import_decl(superjson_import_name: &str) -> ModuleItem {
             raw: None,
         },
     }))
+}
+
+pub fn temp_props_item(excluded: ExprOrSpread) -> ModuleItem {
+    ModuleItem::Stmt(Stmt::Decl(Decl::Var(VarDecl {
+        declare: false,
+        decls: vec![VarDeclarator {
+            definite: false,
+            init: Some(
+                Box::new(Expr::Ident(Ident::new(
+                    NEXT_SSG_PROPS_LOCAL.into(),
+                    DUMMY_SP,
+                )))
+                .wrap_props(excluded),
+            ),
+            name: Pat::Ident(BindingIdent {
+                id: Ident::new(NEXT_SSG_PROPS_ORIG.into(), DUMMY_SP),
+                type_ann: None,
+            }),
+            span: DUMMY_SP,
+        }],
+        kind: VarDeclKind::Const,
+        span: DUMMY_SP,
+    })))
 }
 
 pub trait Wrapper {
