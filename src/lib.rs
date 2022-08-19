@@ -19,22 +19,22 @@ mod utils;
 static SSG_EXPORTS: &[&str; 2] = &["getStaticProps", "getServerSideProps"];
 
 // import { withSuperJSONProps as _withSuperJSONProps } from "next-superjson-plugin/tools";
-pub static SUPERJSON_PROPS_IMPORTED: &str = "withSuperJSONProps";
+static SUPERJSON_PROPS_IMPORTED: &str = "withSuperJSONProps";
 pub static SUPERJSON_PROPS_LOCAL: &str = "_withSuperJSONProps";
 
 // import { withSuperJSONPage as _withSuperJSONPage } from "next-superjson-plugin/tools";
-pub static SUPERJSON_PAGE_IMPORTED: &str = "withSuperJSONPage";
+static SUPERJSON_PAGE_IMPORTED: &str = "withSuperJSONPage";
 pub static SUPERJSON_PAGE_LOCAL: &str = "_withSuperJSONPage";
 
 // import { not_gSSP as _NEXT_SUPERJSON_IMPORTED_PROPS } from '..'
 // const  _NEXT_SUPERJSON_SSG_PROPS = wrap(_NEXT_SUPERJSON_IMPORTED_PROPS)
 // export { _NEXT_SUPERJSON_SSG_PROPS as gSSP }
-pub static NEXT_SSG_PROPS_LOCAL: &str = "_NEXT_SUPERJSON_IMPORTED_PROPS";
-pub static NEXT_SSG_PROPS_ORIG: &str = "_NEXT_SUPERJSON_SSG_PROPS";
+static NEXT_SSG_PROPS_LOCAL: &str = "_NEXT_SUPERJSON_IMPORTED_PROPS";
+static NEXT_SSG_PROPS_ORIG: &str = "_NEXT_SUPERJSON_SSG_PROPS";
 
 // import { unwrapped as _NEXT_SUPERJSON_IMPORTED_PAGE } from 'src'
 // export default wrap(_NEXT_SUPERJSON_IMPORTED_PAGE)
-pub static NEXT_PAGE_LOCAL: &str = "_NEXT_SUPERJSON_IMPORTED_PAGE";
+static NEXT_PAGE_LOCAL: &str = "_NEXT_SUPERJSON_IMPORTED_PAGE";
 
 struct PositionHolder {
     orig: Option<usize>,
