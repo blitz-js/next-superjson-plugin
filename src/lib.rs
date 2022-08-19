@@ -644,8 +644,19 @@ impl VisitMut for NextSuperJsonTransformer {
                                     ImportDecl {
                                         asserts: None,
                                         span: DUMMY_SP,
-                                        specifiers: vec![],
-                                        src: src.take(),
+                                        specifiers: vec![ImportSpecifier::Named(
+                                            ImportNamedSpecifier {
+                                                imported: Some(s.orig.clone()),
+                                                is_type_only: false,
+                                                local: Ident::new(
+                                                    NEXT_PAGE_LOCAL.into(),
+                                                    DUMMY_SP,
+                                                ),
+                                                span: DUMMY_SP,
+                                            },
+                                        )],
+                                        // should clone
+                                        src: src.clone(),
                                         type_only: false,
                                     },
                                 )));
