@@ -122,12 +122,8 @@ impl VisitMut for NextSuperJsonTransformer {
                     ModuleItem::Stmt(Stmt::Expr(ExprStmt { expr, .. })) => {
                         let assign_expr = expr.as_mut_assign().unwrap();
 
-                        assign_expr.right = Box::new(Expr::Call(CallExpr {
-                            args: vec![assign_expr.right.take().as_arg(), self.excluded_expr()],
-                            callee: Ident::new(SUPERJSON_PROPS_LOCAL.into(), DUMMY_SP).as_callee(),
-                            span: DUMMY_SP,
-                            type_args: None,
-                        }));
+                        assign_expr.right =
+                            assign_expr.right.take().wrap_props(self.excluded_expr());
 
                         new_items.push(item.take());
                     }
@@ -136,35 +132,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         // =>
                         // const gSSP = wrap(.., excluded)
                         Decl::Fn(fn_decl) => {
-                            *decl = Decl::Var(VarDecl {
-                                declare: false,
-                                decls: vec![VarDeclarator {
-                                    definite: false,
-                                    init: Some(Box::new(Expr::Call(CallExpr {
-                                        span: DUMMY_SP,
-                                        callee: Ident::new(SUPERJSON_PROPS_LOCAL.into(), DUMMY_SP)
-                                            .as_callee(),
-                                        args: vec![
-                                            ExprOrSpread {
-                                                spread: None,
-                                                expr: Box::new(Expr::Fn(FnExpr {
-                                                    function: fn_decl.function.take(),
-                                                    ident: None,
-                                                })),
-                                            },
-                                            self.excluded_expr(),
-                                        ],
-                                        type_args: Default::default(),
-                                    }))),
-                                    name: Pat::Ident(BindingIdent {
-                                        id: fn_decl.ident.take(),
-                                        type_ann: None,
-                                    }),
-                                    span: DUMMY_SP,
-                                }],
-                                kind: VarDeclKind::Const,
-                                span: DUMMY_SP,
-                            });
+                            *decl = fn_decl.take().as_wrapped_var_decl(self.excluded_expr());
 
                             new_items.push(item.take());
                         }
@@ -174,13 +142,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         Decl::Var(var_decl) => {
                             let v = var_decl.decls.index_mut(self.props_ident.decl.unwrap());
 
-                            v.init = Some(Box::new(Expr::Call(CallExpr {
-                                span: DUMMY_SP,
-                                callee: Ident::new(SUPERJSON_PROPS_LOCAL.into(), DUMMY_SP)
-                                    .as_callee(),
-                                args: vec![v.init.take().unwrap().as_arg(), self.excluded_expr()],
-                                type_args: None,
-                            })));
+                            v.init = Some(v.init.take().unwrap().wrap_props(self.excluded_expr()));
 
                             new_items.push(item.take());
                         }
@@ -194,35 +156,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         ..
                     })) => match export_decl {
                         Decl::Fn(fn_decl) => {
-                            *export_decl = Decl::Var(VarDecl {
-                                declare: false,
-                                decls: vec![VarDeclarator {
-                                    definite: false,
-                                    init: Some(Box::new(Expr::Call(CallExpr {
-                                        span: DUMMY_SP,
-                                        callee: Ident::new(SUPERJSON_PROPS_LOCAL.into(), DUMMY_SP)
-                                            .as_callee(),
-                                        args: vec![
-                                            ExprOrSpread {
-                                                spread: None,
-                                                expr: Box::new(Expr::Fn(FnExpr {
-                                                    function: fn_decl.function.take(),
-                                                    ident: None,
-                                                })),
-                                            },
-                                            self.excluded_expr(),
-                                        ],
-                                        type_args: Default::default(),
-                                    }))),
-                                    name: Pat::Ident(BindingIdent {
-                                        id: fn_decl.ident.take(),
-                                        type_ann: None,
-                                    }),
-                                    span: DUMMY_SP,
-                                }],
-                                kind: VarDeclKind::Const,
-                                span: DUMMY_SP,
-                            });
+                            *export_decl = fn_decl.take().as_wrapped_var_decl(self.excluded_expr());
 
                             new_items.push(item.take());
                         }
@@ -232,13 +166,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         Decl::Var(var_decl) => {
                             let v = var_decl.decls.index_mut(self.props_ident.decl.unwrap());
 
-                            v.init = Some(Box::new(Expr::Call(CallExpr {
-                                span: DUMMY_SP,
-                                callee: Ident::new(SUPERJSON_PROPS_LOCAL.into(), DUMMY_SP)
-                                    .as_callee(),
-                                args: vec![v.init.take().unwrap().as_arg(), self.excluded_expr()],
-                                type_args: None,
-                            })));
+                            v.init = Some(v.init.take().unwrap().wrap_props(self.excluded_expr()));
 
                             new_items.push(item.take());
                         }
@@ -276,35 +204,7 @@ impl VisitMut for NextSuperJsonTransformer {
 
                         new_items.push(item.take());
 
-                        new_items.push(ModuleItem::Stmt(Stmt::Decl(Decl::Var(VarDecl {
-                            declare: false,
-                            decls: vec![VarDeclarator {
-                                definite: false,
-                                init: Some(Box::new(Expr::Call(CallExpr {
-                                    span: DUMMY_SP,
-                                    callee: Ident::new(SUPERJSON_PROPS_LOCAL.into(), DUMMY_SP)
-                                        .as_callee(),
-                                    args: vec![
-                                        ExprOrSpread {
-                                            spread: None,
-                                            expr: Box::new(Expr::Ident(Ident::new(
-                                                NEXT_SSG_PROPS_LOCAL.into(),
-                                                DUMMY_SP,
-                                            ))),
-                                        },
-                                        self.excluded_expr(),
-                                    ],
-                                    type_args: Default::default(),
-                                }))),
-                                name: Pat::Ident(BindingIdent {
-                                    id: Ident::new(NEXT_SSG_PROPS_ORIG.into(), DUMMY_SP),
-                                    type_ann: None,
-                                }),
-                                span: DUMMY_SP,
-                            }],
-                            kind: VarDeclKind::Const,
-                            span: DUMMY_SP,
-                        }))));
+                        new_items.push(temp_props_item(self.excluded_expr()));
                     }
                     _ => {}
                 }
@@ -320,40 +220,8 @@ impl VisitMut for NextSuperJsonTransformer {
                                 // =>
                                 // export const gSSP = wrap(.., excluded)
                                 Decl::Fn(fn_decl) => {
-                                    *export_decl = Decl::Var(VarDecl {
-                                        declare: false,
-                                        decls: vec![VarDeclarator {
-                                            definite: false,
-                                            init: Some(Box::new(Expr::Call(CallExpr {
-                                                span: DUMMY_SP,
-                                                callee: Ident::new(
-                                                    SUPERJSON_PROPS_LOCAL.into(),
-                                                    DUMMY_SP,
-                                                )
-                                                .as_callee(),
-                                                args: vec![
-                                                    ExprOrSpread {
-                                                        spread: None,
-                                                        expr: Box::new(Expr::Fn(FnExpr {
-                                                            function: fn_decl.function.take(),
-                                                            ident: None,
-                                                        })),
-                                                    },
-                                                    self.excluded_expr(),
-                                                ],
-                                                type_args: Default::default(),
-                                            }))),
-                                            name: Pat::Ident(BindingIdent {
-                                                id: fn_decl.ident.take(),
-                                                type_ann: None,
-                                            }),
-                                            span: DUMMY_SP,
-                                        }],
-                                        kind: VarDeclKind::Const,
-                                        span: DUMMY_SP,
-                                    });
-
-                                    //new_items.push(item.take());
+                                    *export_decl =
+                                        fn_decl.take().as_wrapped_var_decl(self.excluded_expr());
                                 }
                                 // export const gSSP = ..
                                 // =>
@@ -362,16 +230,9 @@ impl VisitMut for NextSuperJsonTransformer {
                                     let v =
                                         var_decl.decls.index_mut(self.props_export.decl.unwrap());
 
-                                    v.init = Some(Box::new(Expr::Call(CallExpr {
-                                        span: DUMMY_SP,
-                                        callee: Ident::new(SUPERJSON_PROPS_LOCAL.into(), DUMMY_SP)
-                                            .as_callee(),
-                                        args: vec![
-                                            v.init.take().unwrap().as_arg(),
-                                            self.excluded_expr(),
-                                        ],
-                                        type_args: None,
-                                    })));
+                                    v.init = Some(
+                                        v.init.take().unwrap().wrap_props(self.excluded_expr()),
+                                    );
                                 }
                                 _ => {}
                             }
@@ -394,59 +255,13 @@ impl VisitMut for NextSuperJsonTransformer {
                                     .take()
                                     .unwrap();
 
-                                new_items.push(ModuleItem::ModuleDecl(ModuleDecl::Import(
-                                    ImportDecl {
-                                        asserts: None,
-                                        span: DUMMY_SP,
-                                        specifiers: vec![ImportSpecifier::Named(
-                                            ImportNamedSpecifier {
-                                                imported: Some(s.orig.clone()),
-                                                is_type_only: false,
-                                                local: Ident::new(
-                                                    NEXT_SSG_PROPS_LOCAL.into(),
-                                                    DUMMY_SP,
-                                                ),
-                                                span: DUMMY_SP,
-                                            },
-                                        )],
-                                        // should clone
-                                        src: src.clone(),
-                                        type_only: false,
-                                    },
-                                )));
+                                new_items.push(temp_import_item(
+                                    s.orig.clone(),
+                                    NEXT_SSG_PROPS_LOCAL,
+                                    src,
+                                ));
 
-                                new_items.push(ModuleItem::Stmt(Stmt::Decl(Decl::Var(VarDecl {
-                                    declare: false,
-                                    decls: vec![VarDeclarator {
-                                        definite: false,
-                                        init: Some(Box::new(Expr::Call(CallExpr {
-                                            span: DUMMY_SP,
-                                            callee: Ident::new(
-                                                SUPERJSON_PROPS_LOCAL.into(),
-                                                DUMMY_SP,
-                                            )
-                                            .as_callee(),
-                                            args: vec![
-                                                ExprOrSpread {
-                                                    spread: None,
-                                                    expr: Box::new(Expr::Ident(Ident::new(
-                                                        NEXT_SSG_PROPS_LOCAL.into(),
-                                                        DUMMY_SP,
-                                                    ))),
-                                                },
-                                                self.excluded_expr(),
-                                            ],
-                                            type_args: Default::default(),
-                                        }))),
-                                        name: Pat::Ident(BindingIdent {
-                                            id: Ident::new(NEXT_SSG_PROPS_ORIG.into(), DUMMY_SP),
-                                            type_ann: None,
-                                        }),
-                                        span: DUMMY_SP,
-                                    }],
-                                    kind: VarDeclKind::Const,
-                                    span: DUMMY_SP,
-                                }))));
+                                new_items.push(temp_props_item(self.excluded_expr()));
 
                                 new_items.push(ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(
                                     NamedExport {
@@ -508,19 +323,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(
                             ExportDefaultExpr { expr, .. },
                         )) => {
-                            *expr = Box::new(Expr::Call(CallExpr {
-                                args: vec![ExprOrSpread {
-                                    spread: None,
-                                    expr: expr.take(),
-                                }],
-                                callee: Expr::Ident(Ident::new(
-                                    SUPERJSON_PAGE_LOCAL.into(),
-                                    DUMMY_SP,
-                                ))
-                                .as_callee(),
-                                span: DUMMY_SP,
-                                type_args: None,
-                            }));
+                            *expr = expr.take().wrap_page();
                         }
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(
                             ExportDefaultDecl { decl, .. },
@@ -537,38 +340,16 @@ impl VisitMut for NextSuperJsonTransformer {
 
                                         *item = ModuleItem::ModuleDecl(
                                             ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
-                                                expr: Box::new(Expr::Call(CallExpr {
-                                                    args: vec![ExprOrSpread {
-                                                        spread: None,
-                                                        expr: Box::new(Expr::Ident(id)),
-                                                    }],
-                                                    callee: Expr::Ident(Ident::new(
-                                                        SUPERJSON_PAGE_LOCAL.into(),
-                                                        DUMMY_SP,
-                                                    ))
-                                                    .as_callee(),
-                                                    span: DUMMY_SP,
-                                                    type_args: None,
-                                                })),
+                                                expr: Box::new(Expr::Ident(id)).wrap_page(),
                                                 span: DUMMY_SP,
                                             }),
                                         );
                                     } else {
+                                        let expr: Box<Expr> = Box::new(class_expr.take().into());
+
                                         *item = ModuleItem::ModuleDecl(
                                             ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
-                                                expr: Box::new(Expr::Call(CallExpr {
-                                                    args: vec![ExprOrSpread {
-                                                        spread: None,
-                                                        expr: Box::new(class_expr.take().into()),
-                                                    }],
-                                                    callee: Expr::Ident(Ident::new(
-                                                        SUPERJSON_PAGE_LOCAL.into(),
-                                                        DUMMY_SP,
-                                                    ))
-                                                    .as_callee(),
-                                                    span: DUMMY_SP,
-                                                    type_args: None,
-                                                })),
+                                                expr: expr.wrap_page(),
                                                 span: DUMMY_SP,
                                             }),
                                         );
@@ -584,38 +365,16 @@ impl VisitMut for NextSuperJsonTransformer {
 
                                         *item = ModuleItem::ModuleDecl(
                                             ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
-                                                expr: Box::new(Expr::Call(CallExpr {
-                                                    args: vec![ExprOrSpread {
-                                                        spread: None,
-                                                        expr: Box::new(Expr::Ident(id)),
-                                                    }],
-                                                    callee: Expr::Ident(Ident::new(
-                                                        SUPERJSON_PAGE_LOCAL.into(),
-                                                        DUMMY_SP,
-                                                    ))
-                                                    .as_callee(),
-                                                    span: DUMMY_SP,
-                                                    type_args: None,
-                                                })),
+                                                expr: Box::new(Expr::Ident(id)).wrap_page(),
                                                 span: DUMMY_SP,
                                             }),
                                         );
                                     } else {
+                                        let expr: Box<Expr> = Box::new(fn_expr.take().into());
+
                                         *item = ModuleItem::ModuleDecl(
                                             ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
-                                                expr: Box::new(Expr::Call(CallExpr {
-                                                    args: vec![ExprOrSpread {
-                                                        spread: None,
-                                                        expr: Box::new(fn_expr.take().into()),
-                                                    }],
-                                                    callee: Expr::Ident(Ident::new(
-                                                        SUPERJSON_PAGE_LOCAL.into(),
-                                                        DUMMY_SP,
-                                                    ))
-                                                    .as_callee(),
-                                                    span: DUMMY_SP,
-                                                    type_args: None,
-                                                })),
+                                                expr: expr.wrap_page(),
                                                 span: DUMMY_SP,
                                             }),
                                         );
@@ -640,45 +399,19 @@ impl VisitMut for NextSuperJsonTransformer {
                             // import { unwrapped as _NEXT_SUPERJSON_IMPORTED_PAGE } from 'src'
                             // export default wrap(_NEXT_SUPERJSON_IMPORTED_PAGE)
                             if let Some(src) = src {
-                                new_items.push(ModuleItem::ModuleDecl(ModuleDecl::Import(
-                                    ImportDecl {
-                                        asserts: None,
-                                        span: DUMMY_SP,
-                                        specifiers: vec![ImportSpecifier::Named(
-                                            ImportNamedSpecifier {
-                                                imported: Some(s.orig.clone()),
-                                                is_type_only: false,
-                                                local: Ident::new(
-                                                    NEXT_PAGE_LOCAL.into(),
-                                                    DUMMY_SP,
-                                                ),
-                                                span: DUMMY_SP,
-                                            },
-                                        )],
-                                        // should clone
-                                        src: src.clone(),
-                                        type_only: false,
-                                    },
-                                )));
+                                new_items.push(temp_import_item(
+                                    s.orig.clone(),
+                                    NEXT_PAGE_LOCAL,
+                                    src,
+                                ));
 
                                 new_items.push(ModuleItem::ModuleDecl(
                                     ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
-                                        expr: Box::new(Expr::Call(CallExpr {
-                                            args: vec![ExprOrSpread {
-                                                spread: None,
-                                                expr: Box::new(Expr::Ident(Ident::new(
-                                                    NEXT_PAGE_LOCAL.into(),
-                                                    DUMMY_SP,
-                                                ))),
-                                            }],
-                                            callee: Expr::Ident(Ident::new(
-                                                SUPERJSON_PAGE_LOCAL.into(),
-                                                DUMMY_SP,
-                                            ))
-                                            .as_callee(),
-                                            span: DUMMY_SP,
-                                            type_args: None,
-                                        })),
+                                        expr: Box::new(Expr::Ident(Ident::new(
+                                            NEXT_PAGE_LOCAL.into(),
+                                            DUMMY_SP,
+                                        )))
+                                        .wrap_page(),
                                         span: DUMMY_SP,
                                     }),
                                 ));
@@ -690,20 +423,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                 if let ModuleExportName::Ident(id) = &s.orig {
                                     new_items.push(ModuleItem::ModuleDecl(
                                         ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
-                                            expr: Box::new(Expr::Call(CallExpr {
-                                                args: vec![ExprOrSpread {
-                                                    spread: None,
-                                                    // TODO: how to take
-                                                    expr: Box::new(Expr::Ident(id.clone())),
-                                                }],
-                                                callee: Expr::Ident(Ident::new(
-                                                    SUPERJSON_PAGE_LOCAL.into(),
-                                                    DUMMY_SP,
-                                                ))
-                                                .as_callee(),
-                                                span: DUMMY_SP,
-                                                type_args: None,
-                                            })),
+                                            expr: Box::new(Expr::Ident(id.clone())).wrap_page(),
                                             span: DUMMY_SP,
                                         }),
                                     ))
