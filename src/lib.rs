@@ -713,8 +713,12 @@ impl NextSuperJsonTransformer {
 
 #[plugin_transform]
 pub fn process_transform(program: Program, _metadata: TransformPluginProgramMetadata) -> Program {
-    let config = serde_json::from_str::<Config>(&_metadata.get_transform_plugin_config().unwrap())
-        .expect("Failed to parse plugin config");
+    let config = serde_json::from_str::<Config>(
+        &_metadata
+            .get_transform_plugin_config()
+            .unwrap_or_else(|| "{}".to_string()),
+    )
+    .expect("Failed to parse plugin config");
 
     match _metadata.get_context(&TransformPluginMetadataContextKind::Filename) {
         Some(s) => {
