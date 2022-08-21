@@ -36,6 +36,7 @@ static NEXT_SSG_PROPS_ORIG: &str = "_NEXT_SUPERJSON_SSG_PROPS";
 // export default wrap(_NEXT_SUPERJSON_IMPORTED_PAGE)
 static NEXT_PAGE_LOCAL: &str = "_NEXT_SUPERJSON_IMPORTED_PAGE";
 
+#[derive(Default)]
 struct PositionHolder {
     orig: Option<usize>,
     decl: Option<usize>,
@@ -71,17 +72,8 @@ pub fn transform(config: Config) -> impl VisitMut {
     NextSuperJsonTransformer {
         excluded: config.excluded,
 
-        props_export: PositionHolder {
-            orig: None,
-            decl: None,
-            spec: None,
-        },
-
-        props_ident: PositionHolder {
-            orig: None,
-            decl: None,
-            spec: None,
-        },
+        props_export: Default::default(),
+        props_ident: Default::default(),
 
         skip_ssg_prop: Default::default(),
 
