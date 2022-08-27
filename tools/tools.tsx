@@ -51,6 +51,40 @@ export function withSuperJSONProps<P>(
   };
 }
 
+export function withSuperJSONInitProps(
+  gip: any,
+  exclude: string[] = []
+): any {
+  return async function withSuperJSON(...args: any[]) {
+    const result = await gip(...args);
+
+    const excludedPropValues = exclude.map((propKey) => {
+      const value = (result as any)[propKey];
+      delete (result as any)[propKey];
+      return value;
+    });
+
+    const { json, meta } = SuperJSON.serialize(result);
+    const props = json as any;
+
+    if (meta) {
+      props._superjson = meta;
+    }
+
+    exclude.forEach((key, index) => {
+      const excludedPropValue = excludedPropValues[index];
+      if (typeof excludedPropValue !== 'undefined') {
+        props[key] = excludedPropValue;
+      }
+    });
+
+    return {
+      ...result,
+      ...props,
+    };
+  };
+}
+
 export function deserializeProps<P>(serializedProps: SuperJSONProps<P>): P {
   const { _superjson, ...props } = serializedProps;
   return SuperJSON.deserialize({ json: props as any, meta: _superjson });
