@@ -60,6 +60,8 @@ struct NextSuperJsonTransformer {
 
     props: TransformTarget,
     page: TransformTarget,
+
+    use_init_props: bool,
 }
 
 #[derive(Debug, Default, Clone, Deserialize)]
@@ -79,6 +81,8 @@ pub fn transform(config: Config) -> impl VisitMut {
 
         props: Default::default(),
         page: Default::default(),
+
+        use_init_props: false,
     }
 }
 
