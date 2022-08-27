@@ -43,18 +43,18 @@ struct PositionHolder {
     spec: Option<usize>,
 }
 
+#[derive(Default)]
+struct TransformTarget {
+    export: PositionHolder,
+    ident: PositionHolder,
+    skip: bool,
+}
+
 struct NextSuperJsonTransformer {
     excluded: Vec<String>,
 
-    props_export: PositionHolder,
-    props_ident: PositionHolder,
-
-    skip_ssg_prop: bool,
-
-    page_pos: Option<usize>,
-    page_spec_pos: Option<usize>,
-
-    skip_page: bool,
+    props: TransformTarget,
+    page: TransformTarget,
 }
 
 #[derive(Debug, Default, Clone, Deserialize)]
@@ -72,15 +72,17 @@ pub fn transform(config: Config) -> impl VisitMut {
     NextSuperJsonTransformer {
         excluded: config.excluded,
 
-        props_export: Default::default(),
-        props_ident: Default::default(),
+        // props_export: Default::default(),
+        // props_ident: Default::default(),
 
-        skip_ssg_prop: Default::default(),
+        // skip_ssg_prop: Default::default(),
 
-        page_pos: Default::default(),
-        page_spec_pos: Default::default(),
+        // page_pos: Default::default(),
+        // page_spec_pos: Default::default(),
 
-        skip_page: Default::default(),
+        // skip_page: Default::default(),
+        props: Default::default(),
+        page: Default::default(),
     }
 }
 
@@ -90,22 +92,22 @@ impl VisitMut for NextSuperJsonTransformer {
     fn visit_mut_module_items(&mut self, items: &mut Vec<ModuleItem>) {
         self.find_ssg_prop(items);
 
-        if self.props_export.orig.is_none() {
+        if self.props.export.orig.is_none() {
             return;
         }
 
         self.find_page(items);
 
-        if self.page_pos.is_none() {
+        if self.page.export.orig.is_none() {
             return;
         }
 
         let mut new_items = vec![];
 
         for (pos, item) in items.iter_mut().enumerate() {
-            if self.props_ident.orig.is_some()
-                && pos == self.props_ident.orig.unwrap()
-                && !self.skip_ssg_prop
+            if self.props.ident.orig.is_some()
+                && pos == self.props.ident.orig.unwrap()
+                && !self.props.skip
             {
                 match item {
                     // gSSP = ..
@@ -132,7 +134,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         // =>
                         // const gSSP = wrap(.., excluded)
                         Decl::Var(var_decl) => {
-                            let v = var_decl.decls.index_mut(self.props_ident.decl.unwrap());
+                            let v = var_decl.decls.index_mut(self.props.ident.decl.unwrap());
 
                             v.init = Some(v.init.take().unwrap().wrap_props(self.excluded_expr()));
 
@@ -156,7 +158,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         // =>
                         // export const not_gSSP = wrap(..)
                         Decl::Var(var_decl) => {
-                            let v = var_decl.decls.index_mut(self.props_ident.decl.unwrap());
+                            let v = var_decl.decls.index_mut(self.props.ident.decl.unwrap());
 
                             v.init = Some(v.init.take().unwrap().wrap_props(self.excluded_expr()));
 
@@ -181,7 +183,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         specifiers, ..
                     })) => {
                         let s = specifiers
-                            .index_mut(self.props_ident.spec.unwrap())
+                            .index_mut(self.props.ident.spec.unwrap())
                             .as_mut_named()
                             .unwrap();
 
@@ -201,7 +203,7 @@ impl VisitMut for NextSuperJsonTransformer {
                     _ => {}
                 }
             } else {
-                if pos == self.props_export.orig.unwrap() && !self.skip_ssg_prop {
+                if pos == self.props.export.orig.unwrap() && !self.props.skip {
                     match item {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl {
                             decl: export_decl,
@@ -220,7 +222,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                 // export const gSSP = wrap(.., excluded)
                                 Decl::Var(var_decl) => {
                                     let v =
-                                        var_decl.decls.index_mut(self.props_export.decl.unwrap());
+                                        var_decl.decls.index_mut(self.props.export.decl.unwrap());
 
                                     v.init = Some(
                                         v.init.take().unwrap().wrap_props(self.excluded_expr()),
@@ -242,7 +244,7 @@ impl VisitMut for NextSuperJsonTransformer {
                             // export { _NEXT_SUPERJSON_SSG_PROPS as gSSP }
                             if let Some(src) = src {
                                 let s = specifiers
-                                    .index_mut(self.props_export.spec.unwrap())
+                                    .index_mut(self.props.export.spec.unwrap())
                                     .as_mut_named()
                                     .take()
                                     .unwrap();
@@ -275,7 +277,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                     },
                                 )));
 
-                                specifiers.remove(self.props_export.spec.unwrap());
+                                specifiers.remove(self.props.export.spec.unwrap());
 
                             // export { gSSP }
                             // export { not_gSSP as gSSP }
@@ -283,7 +285,7 @@ impl VisitMut for NextSuperJsonTransformer {
                             // export { _NEXT_SUPERJSON_SSG_PROPS as gSSP }
                             } else {
                                 let s = specifiers
-                                    .index_mut(self.props_export.spec.unwrap())
+                                    .index_mut(self.props.export.spec.unwrap())
                                     .as_mut_named()
                                     .unwrap();
 
@@ -298,7 +300,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                 // case 2: local
                                 // const gSSP = () => {}
                                 // => gSSP
-                                if self.props_ident.spec.is_some() {
+                                if self.props.ident.spec.is_some() {
                                     s.orig = ModuleExportName::Ident(Ident::new(
                                         NEXT_SSG_PROPS_ORIG.into(),
                                         DUMMY_SP,
@@ -310,7 +312,7 @@ impl VisitMut for NextSuperJsonTransformer {
                     }
                 }
 
-                if pos == self.page_pos.unwrap() && !self.skip_page {
+                if pos == self.page.export.orig.unwrap() && !self.page.skip {
                     match item {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(
                             ExportDefaultExpr { expr, .. },
@@ -381,7 +383,7 @@ impl VisitMut for NextSuperJsonTransformer {
                             ..
                         })) => {
                             let s = specifiers
-                                .index_mut(self.page_spec_pos.unwrap())
+                                .index_mut(self.page.export.spec.unwrap())
                                 .as_mut_named()
                                 .take()
                                 .unwrap();
@@ -422,7 +424,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                 }
                             }
 
-                            specifiers.remove(self.page_spec_pos.unwrap());
+                            specifiers.remove(self.page.export.spec.unwrap());
                         }
                         _ => {}
                     }
@@ -445,13 +447,13 @@ impl VisitMut for NextSuperJsonTransformer {
         }
 
         // TODO: these two stmts can be combined
-        if !self.skip_ssg_prop {
+        if !self.props.skip {
             prepend_stmt(
                 &mut new_items,
                 superjson_import_decl(SUPERJSON_PROPS_IMPORTED),
             );
         }
-        if !self.skip_page {
+        if !self.page.skip {
             prepend_stmt(
                 &mut new_items,
                 superjson_import_decl(SUPERJSON_PAGE_IMPORTED),
@@ -489,16 +491,16 @@ impl NextSuperJsonTransformer {
     pub fn find_ssg_prop(&mut self, items: &mut Vec<ModuleItem>) {
         let mut ssg_prop_ident = None;
 
-        self.props_export.orig = items.iter().position(|item| match item {
+        self.props.export.orig = items.iter().position(|item| match item {
             // check has ssg props
             ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => match decl {
                 Decl::Fn(fn_decl) => SSG_EXPORTS.contains(&&*fn_decl.ident.sym),
                 Decl::Var(var_decl) => {
-                    self.props_export.decl = var_decl.decls.iter().position(|decl| {
+                    self.props.export.decl = var_decl.decls.iter().position(|decl| {
                         SSG_EXPORTS.contains(&&*decl.name.as_ident().unwrap().sym)
                     });
 
-                    self.props_export.decl.is_some()
+                    self.props.export.decl.is_some()
                 }
                 _ => false,
             },
@@ -507,7 +509,7 @@ impl NextSuperJsonTransformer {
                 src,
                 ..
             })) => {
-                self.props_export.spec = specifiers.iter().position(|specifier| match specifier {
+                self.props.export.spec = specifiers.iter().position(|specifier| match specifier {
                     ExportSpecifier::Named(ExportNamedSpecifier {
                         orig: ModuleExportName::Ident(orig_id),
                         exported,
@@ -519,10 +521,10 @@ impl NextSuperJsonTransformer {
                         };
 
                         if SSG_EXPORTS.contains(&&**exported_as) {
-                            self.skip_ssg_prop = src.is_some()
+                            self.props.skip = src.is_some()
                                 && (exported.is_none() || (&&**exported_as == &&*orig_id.sym));
 
-                            if !self.skip_ssg_prop {
+                            if !self.props.skip {
                                 ssg_prop_ident = Some((*orig_id.sym).to_string());
                             }
                             return true;
@@ -532,18 +534,18 @@ impl NextSuperJsonTransformer {
                     _ => false,
                 });
 
-                self.props_export.spec.is_some()
+                self.props.export.spec.is_some()
             }
             _ => false,
         });
 
-        if ssg_prop_ident.is_some() && !self.skip_ssg_prop {
+        if ssg_prop_ident.is_some() && !self.props.skip {
             let mut n = items.len();
 
             while n > 0 {
                 n -= 1;
 
-                if self.props_export.orig.unwrap() == n {
+                if self.props.export.orig.unwrap() == n {
                     continue;
                 }
 
@@ -559,7 +561,7 @@ impl NextSuperJsonTransformer {
                                 if assign.op == op!("=")
                                     && &*left.unwrap().sym == ssg_prop_ident.as_ref().unwrap()
                                 {
-                                    self.props_ident.orig = Some(n);
+                                    self.props.ident.orig = Some(n);
                                     break;
                                 }
                             }
@@ -570,25 +572,25 @@ impl NextSuperJsonTransformer {
                     ModuleItem::Stmt(Stmt::Decl(decl)) => match decl {
                         Decl::Fn(fn_decl) => {
                             if &*fn_decl.ident.sym == ssg_prop_ident.as_ref().unwrap() {
-                                self.props_ident.orig = Some(n);
+                                self.props.ident.orig = Some(n);
                                 break;
                             }
                         }
                         Decl::Var(var_decl) => {
-                            self.props_ident.decl = var_decl.decls.iter().position(|decl| {
+                            self.props.ident.decl = var_decl.decls.iter().position(|decl| {
                                 let id = decl.name.as_ident();
 
                                 if id.is_some()
                                     && &*id.unwrap().sym == ssg_prop_ident.as_ref().unwrap()
                                 {
-                                    self.props_ident.orig = Some(n);
+                                    self.props.ident.orig = Some(n);
                                     return true;
                                 }
 
                                 false
                             });
 
-                            if self.props_ident.decl.is_some() {
+                            if self.props.ident.decl.is_some() {
                                 break;
                             }
                         }
@@ -603,25 +605,25 @@ impl NextSuperJsonTransformer {
                     })) => match export_decl {
                         Decl::Fn(fn_decl) => {
                             if &*fn_decl.ident.sym == ssg_prop_ident.as_ref().unwrap() {
-                                self.props_ident.orig = Some(n);
+                                self.props.ident.orig = Some(n);
                                 break;
                             }
                         }
                         Decl::Var(var_decl) => {
-                            self.props_ident.decl = var_decl.decls.iter().position(|decl| {
+                            self.props.ident.decl = var_decl.decls.iter().position(|decl| {
                                 let id = decl.name.as_ident();
 
                                 if id.is_some()
                                     && &*id.unwrap().sym == ssg_prop_ident.as_ref().unwrap()
                                 {
-                                    self.props_ident.orig = Some(n);
+                                    self.props.ident.orig = Some(n);
                                     return true;
                                 }
 
                                 false
                             });
 
-                            if self.props_ident.decl.is_some() {
+                            if self.props.ident.decl.is_some() {
                                 break;
                             }
                         }
@@ -631,7 +633,7 @@ impl NextSuperJsonTransformer {
                     ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
                         specifiers, ..
                     })) => {
-                        self.props_ident.spec = specifiers.iter().position(|specifier| {
+                        self.props.ident.spec = specifiers.iter().position(|specifier| {
                             if let ImportSpecifier::Named(ImportNamedSpecifier {
                                 local,
                                 imported,
@@ -643,18 +645,18 @@ impl NextSuperJsonTransformer {
                                         if let ModuleExportName::Ident(ident) =
                                             imported.as_ref().unwrap()
                                         {
-                                            self.skip_ssg_prop = SSG_EXPORTS.contains(&&*ident.sym);
+                                            self.props.skip = SSG_EXPORTS.contains(&&*ident.sym);
                                         }
                                     }
 
-                                    self.props_ident.orig = Some(n);
+                                    self.props.ident.orig = Some(n);
                                     return true;
                                 }
                             }
                             false
                         });
 
-                        if self.props_ident.orig.is_some() {
+                        if self.props.ident.orig.is_some() {
                             break;
                         }
                     }
@@ -665,7 +667,7 @@ impl NextSuperJsonTransformer {
     }
 
     pub fn find_page(&mut self, items: &Vec<ModuleItem>) {
-        self.page_pos = items.iter().position(|item| match item {
+        self.page.export.orig = items.iter().position(|item| match item {
             // check has page
             ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(_)) => true,
             ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(_)) => true,
@@ -674,7 +676,7 @@ impl NextSuperJsonTransformer {
                 src,
                 ..
             })) => {
-                self.page_spec_pos = specifiers.iter().position(|spec| match spec {
+                self.page.export.spec = specifiers.iter().position(|spec| match spec {
                     ExportSpecifier::Named(ExportNamedSpecifier {
                         orig: ModuleExportName::Ident(Ident { sym, .. }),
                         exported,
@@ -683,20 +685,20 @@ impl NextSuperJsonTransformer {
                         Some(ModuleExportName::Ident(Ident {
                             sym: exported_sym, ..
                         })) => {
-                            self.skip_page =
+                            self.page.skip =
                                 exported_sym == "default" && sym == "default" && src.is_some();
                             exported_sym == "default"
                         }
                         _ => {
                             // export { default } from 'source' -> skip
-                            self.skip_page = src.is_some() && sym == "default";
-                            self.skip_page
+                            self.page.skip = src.is_some() && sym == "default";
+                            self.page.skip
                         }
                     },
                     _ => false,
                 });
 
-                self.page_spec_pos.is_some()
+                self.page.export.spec.is_some()
             }
             _ => false,
         })
