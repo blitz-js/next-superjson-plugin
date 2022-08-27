@@ -453,6 +453,12 @@ impl VisitMut for NextSuperJsonTransformer {
                 superjson_import_decl(SUPERJSON_PROPS_IMPORTED),
             );
         }
+        if self.use_init_props {
+            prepend_stmt(
+                &mut new_items,
+                superjson_import_decl(SUPERJSON_INIT_PROPS_IMPORTED),
+            );
+        }
         if !self.page.skip {
             prepend_stmt(
                 &mut new_items,
