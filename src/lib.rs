@@ -468,6 +468,52 @@ impl VisitMut for NextSuperJsonTransformer {
 
         *items = new_items;
     }
+
+    fn visit_mut_class_member(&mut self, member: &mut ClassMember) {
+        member.take();
+
+        match member {
+            ClassMember::ClassProp(p) => {
+                if let PropName::Ident(id) = &p.key {
+                    if &*id.sym == INITIAL_PROPS {
+                        if let Some(expr) = &mut p.value {
+                            self.use_init_props = true;
+                            p.value = Some(expr.take().wrap_init_props(self.excluded_expr()));
+                        }
+                    }
+                }
+            }
+            ClassMember::Method(m) => {
+                if let PropName::Ident(id) = &m.key {
+                    if &*id.sym == INITIAL_PROPS {
+                        self.use_init_props = true;
+                        *member = ClassMember::ClassProp(ClassProp {
+                            accessibility: m.accessibility.take(),
+                            declare: false,
+                            decorators: vec![],
+                            definite: false,
+                            is_abstract: m.is_abstract,
+                            is_optional: m.is_optional,
+                            is_override: m.is_override,
+                            is_static: m.is_static,
+                            key: m.key.take(),
+                            readonly: false,
+                            span: DUMMY_SP,
+                            type_ann: None,
+                            value: Some(
+                                Box::new(Expr::Fn(FnExpr {
+                                    function: m.function.take(),
+                                    ident: None,
+                                }))
+                                .wrap_init_props(self.excluded_expr()),
+                            ),
+                        });
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 impl NextSuperJsonTransformer {
