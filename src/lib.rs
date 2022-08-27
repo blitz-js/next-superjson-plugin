@@ -17,10 +17,15 @@ use utils::*;
 mod utils;
 
 static SSG_EXPORTS: &[&str; 2] = &["getStaticProps", "getServerSideProps"];
+static INITIAL_PROPS: &str = "getInitialProps";
 
 // import { withSuperJSONProps as _withSuperJSONProps } from "next-superjson-plugin/tools";
 static SUPERJSON_PROPS_IMPORTED: &str = "withSuperJSONProps";
 static SUPERJSON_PROPS_LOCAL: &str = "_withSuperJSONProps";
+
+// import { withSuperJSONInitProps as _withSuperJSONInitProps } from "next-superjson-plugin/tools";
+static SUPERJSON_INIT_PROPS_IMPORTED: &str = "withSuperJSONInitProps";
+static SUPERJSON_INIT_PROPS_LOCAL: &str = "_withSuperJSONInitProps";
 
 // import { withSuperJSONPage as _withSuperJSONPage } from "next-superjson-plugin/tools";
 static SUPERJSON_PAGE_IMPORTED: &str = "withSuperJSONPage";
