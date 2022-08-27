@@ -72,15 +72,6 @@ pub fn transform(config: Config) -> impl VisitMut {
     NextSuperJsonTransformer {
         excluded: config.excluded,
 
-        // props_export: Default::default(),
-        // props_ident: Default::default(),
-
-        // skip_ssg_prop: Default::default(),
-
-        // page_pos: Default::default(),
-        // page_spec_pos: Default::default(),
-
-        // skip_page: Default::default(),
         props: Default::default(),
         page: Default::default(),
     }
