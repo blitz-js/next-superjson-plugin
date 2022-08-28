@@ -96,8 +96,8 @@ impl VisitMut for NextSuperJsonTransformer {
 
         if self.props.export.orig.is_none() {
             if !self.use_init_props {
-            return;
-        }
+                return;
+            }
 
             self.props.skip = true;
         }
@@ -584,55 +584,55 @@ impl NextSuperJsonTransformer {
             item.visit_mut_children_with(self);
 
             match item {
-            // check has ssg props
+                // check has ssg props
                 ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
                     match decl {
-                Decl::Fn(fn_decl) => SSG_EXPORTS.contains(&&*fn_decl.ident.sym),
-                Decl::Var(var_decl) => {
-                    self.props.export.decl = var_decl.decls.iter().position(|decl| {
-                        SSG_EXPORTS.contains(&&*decl.name.as_ident().unwrap().sym)
-                    });
+                        Decl::Fn(fn_decl) => SSG_EXPORTS.contains(&&*fn_decl.ident.sym),
+                        Decl::Var(var_decl) => {
+                            self.props.export.decl = var_decl.decls.iter().position(|decl| {
+                                SSG_EXPORTS.contains(&&*decl.name.as_ident().unwrap().sym)
+                            });
 
-                    self.props.export.decl.is_some()
-                }
-                _ => false,
+                            self.props.export.decl.is_some()
+                        }
+                        _ => false,
                     }
                 }
-            ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport {
-                specifiers,
-                src,
-                ..
-            })) => {
+                ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport {
+                    specifiers,
+                    src,
+                    ..
+                })) => {
                     self.props.export.spec =
                         specifiers.iter().position(|specifier| match specifier {
-                    ExportSpecifier::Named(ExportNamedSpecifier {
-                        orig: ModuleExportName::Ident(orig_id),
-                        exported,
-                        ..
-                    }) => {
-                        let exported_as = match exported {
-                            Some(ModuleExportName::Ident(exported_id)) => &exported_id.sym,
-                            _ => &orig_id.sym,
-                        };
+                            ExportSpecifier::Named(ExportNamedSpecifier {
+                                orig: ModuleExportName::Ident(orig_id),
+                                exported,
+                                ..
+                            }) => {
+                                let exported_as = match exported {
+                                    Some(ModuleExportName::Ident(exported_id)) => &exported_id.sym,
+                                    _ => &orig_id.sym,
+                                };
 
-                        if SSG_EXPORTS.contains(&&**exported_as) {
-                            self.props.skip = src.is_some()
+                                if SSG_EXPORTS.contains(&&**exported_as) {
+                                    self.props.skip = src.is_some()
                                         && (exported.is_none()
                                             || (&&**exported_as == &&*orig_id.sym));
 
-                            if !self.props.skip {
-                                ssg_prop_ident = Some((*orig_id.sym).to_string());
+                                    if !self.props.skip {
+                                        ssg_prop_ident = Some((*orig_id.sym).to_string());
+                                    }
+                                    return true;
+                                }
+                                false
                             }
-                            return true;
-                        }
-                        false
-                    }
-                    _ => false,
-                });
+                            _ => false,
+                        });
 
-                self.props.export.spec.is_some()
-            }
-            _ => false,
+                    self.props.export.spec.is_some()
+                }
+                _ => false,
             }
         });
 
