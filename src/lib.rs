@@ -61,6 +61,7 @@ struct NextSuperJsonTransformer {
     props: TransformTarget,
     page: TransformTarget,
 
+    has_init_props: bool,
     use_init_props: bool,
 }
 
@@ -82,6 +83,7 @@ pub fn transform(config: Config) -> impl VisitMut {
         props: Default::default(),
         page: Default::default(),
 
+        has_init_props: false,
         use_init_props: false,
     }
 }
