@@ -95,7 +95,11 @@ impl VisitMut for NextSuperJsonTransformer {
         self.find_ssg_prop(items);
 
         if self.props.export.orig.is_none() {
+            if !self.use_init_props {
             return;
+        }
+
+            self.props.skip = true;
         }
 
         self.find_page(items);
