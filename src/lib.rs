@@ -476,8 +476,7 @@ impl VisitMut for NextSuperJsonTransformer {
     }
 
     fn visit_mut_class_member(&mut self, member: &mut ClassMember) {
-        member.take();
-
+        member.visit_mut_children_with(self);
         match member {
             ClassMember::ClassProp(p) => {
                 if let PropName::Ident(id) = &p.key {
