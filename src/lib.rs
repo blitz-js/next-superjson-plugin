@@ -579,9 +579,14 @@ impl NextSuperJsonTransformer {
     pub fn find_ssg_prop(&mut self, items: &mut Vec<ModuleItem>) {
         let mut ssg_prop_ident = None;
 
-        self.props.export.orig = items.iter().position(|item| match item {
+        self.props.export.orig = items.iter_mut().position(|item| {
+            // check initial props
+            item.visit_mut_children_with(self);
+
+            match item {
             // check has ssg props
-            ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => match decl {
+                ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
+                    match decl {
                 Decl::Fn(fn_decl) => SSG_EXPORTS.contains(&&*fn_decl.ident.sym),
                 Decl::Var(var_decl) => {
                     self.props.export.decl = var_decl.decls.iter().position(|decl| {
@@ -591,13 +596,15 @@ impl NextSuperJsonTransformer {
                     self.props.export.decl.is_some()
                 }
                 _ => false,
-            },
+                    }
+                }
             ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport {
                 specifiers,
                 src,
                 ..
             })) => {
-                self.props.export.spec = specifiers.iter().position(|specifier| match specifier {
+                    self.props.export.spec =
+                        specifiers.iter().position(|specifier| match specifier {
                     ExportSpecifier::Named(ExportNamedSpecifier {
                         orig: ModuleExportName::Ident(orig_id),
                         exported,
@@ -610,7 +617,8 @@ impl NextSuperJsonTransformer {
 
                         if SSG_EXPORTS.contains(&&**exported_as) {
                             self.props.skip = src.is_some()
-                                && (exported.is_none() || (&&**exported_as == &&*orig_id.sym));
+                                        && (exported.is_none()
+                                            || (&&**exported_as == &&*orig_id.sym));
 
                             if !self.props.skip {
                                 ssg_prop_ident = Some((*orig_id.sym).to_string());
@@ -625,6 +633,7 @@ impl NextSuperJsonTransformer {
                 self.props.export.spec.is_some()
             }
             _ => false,
+            }
         });
 
         if ssg_prop_ident.is_some() && !self.props.skip {
