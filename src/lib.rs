@@ -519,6 +519,37 @@ impl VisitMut for NextSuperJsonTransformer {
             _ => {}
         }
     }
+
+    fn visit_mut_assign_expr(&mut self, a: &mut AssignExpr) {
+
+        a.visit_mut_children_with(self);
+
+        if a.left.is_expr() {
+            if let Some(mut expr) = a.left.take().expr() {
+                if let Some(MemberExpr { prop, .. }) = expr.as_mut_member() {
+                    prop.visit_mut_children_with(self);
+                }
+    
+                if self.has_init_props {
+                    a.right = a.right.take().wrap_init_props(self.excluded_expr());
+                    self.use_init_props = true;
+                    self.has_init_props = false;
+                }
+
+                a.left = PatOrExpr::Expr(expr);
+            }
+        }
+    }
+
+    fn visit_mut_member_prop(&mut self, p: &mut MemberProp) {
+        p.visit_mut_children_with(self);
+
+        if let Some(id) = p.as_ident() {
+            if &*id.sym == INITIAL_PROPS {
+                self.has_init_props = true;
+            }
+        }
+    }
 }
 
 impl NextSuperJsonTransformer {
