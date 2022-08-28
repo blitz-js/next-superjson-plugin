@@ -209,7 +209,7 @@ impl VisitMut for NextSuperJsonTransformer {
                     _ => {}
                 }
             } else {
-                if pos == self.props.export.orig.unwrap() && !self.props.skip {
+                if !self.props.skip && pos == self.props.export.orig.unwrap() {
                     match item {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl {
                             decl: export_decl,
