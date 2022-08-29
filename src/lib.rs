@@ -92,7 +92,6 @@ impl Fold for NextSuperJsonTransformer {}
 
 impl VisitMut for NextSuperJsonTransformer {
     fn visit_mut_module_items(&mut self, items: &mut Vec<ModuleItem>) {
-
         self.find_page(items);
 
         if self.page.export.orig.is_none() {
@@ -110,6 +109,8 @@ impl VisitMut for NextSuperJsonTransformer {
         }
 
         let mut new_items = vec![];
+
+        let mut temp_page = None;
 
         for (pos, item) in items.iter_mut().enumerate() {
             if self.props.ident.orig.is_some()
@@ -319,6 +320,8 @@ impl VisitMut for NextSuperJsonTransformer {
                     }
                 }
 
+                let mut keep_page = false;
+
                 if pos == self.page.export.orig.unwrap() && !self.page.skip {
                     match item {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(
@@ -435,6 +438,7 @@ impl VisitMut for NextSuperJsonTransformer {
                         }
                         _ => {}
                     }
+                    keep_page = self.use_init_props;
                 }
 
                 match item {
@@ -443,14 +447,26 @@ impl VisitMut for NextSuperJsonTransformer {
                         ..
                     })) => {
                         if !specifiers.is_empty() {
-                            new_items.push(item.take());
+                            if !keep_page {
+                                new_items.push(item.take());
+                            } else {
+                                temp_page = Some(item.take());
+                            }
                         }
                     }
                     _ => {
-                        new_items.push(item.take());
+                        if !keep_page {
+                            new_items.push(item.take());
+                        } else {
+                            temp_page = Some(item.take());
+                        }
                     }
                 }
             }
+        }
+
+        if let Some(tmp) = temp_page {
+            new_items.push(tmp);
         }
 
         // TODO: these two stmts can be combined
@@ -522,7 +538,6 @@ impl VisitMut for NextSuperJsonTransformer {
     }
 
     fn visit_mut_assign_expr(&mut self, a: &mut AssignExpr) {
-
         a.visit_mut_children_with(self);
 
         if a.left.is_expr() {
@@ -530,7 +545,7 @@ impl VisitMut for NextSuperJsonTransformer {
                 if let Some(MemberExpr { prop, .. }) = expr.as_mut_member() {
                     prop.visit_mut_children_with(self);
                 }
-    
+
                 if self.has_init_props {
                     a.right = a.right.take().wrap_init_props(self.excluded_expr());
                     self.use_init_props = true;
