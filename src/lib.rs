@@ -521,6 +521,7 @@ impl VisitMut for NextSuperJsonTransformer {
     }
 
     fn visit_mut_assign_expr(&mut self, a: &mut AssignExpr) {
+
         a.visit_mut_children_with(self);
 
         if a.left.is_expr() {
@@ -528,22 +529,14 @@ impl VisitMut for NextSuperJsonTransformer {
                 if let Some(MemberExpr { prop, .. }) = expr.as_mut_member() {
                     prop.visit_mut_children_with(self);
                 }
-
-                a.left = PatOrExpr::Expr(expr);
-
+    
                 if self.has_init_props {
-                    self.has_init_props = false;
-
-                    // boilerplate in _app.js
-                    if let Some(ident) = a.right.as_ident() {
-                        if &*ident.sym == "appGetInitialProps" {
-                            return;
-                        }
-                    }
-
                     a.right = a.right.take().wrap_init_props(self.excluded_expr());
                     self.use_init_props = true;
+                    self.has_init_props = false;
                 }
+
+                a.left = PatOrExpr::Expr(expr);
             }
         }
     }
