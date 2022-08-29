@@ -92,6 +92,13 @@ impl Fold for NextSuperJsonTransformer {}
 
 impl VisitMut for NextSuperJsonTransformer {
     fn visit_mut_module_items(&mut self, items: &mut Vec<ModuleItem>) {
+
+        self.find_page(items);
+
+        if self.page.export.orig.is_none() {
+            return;
+        }
+
         self.find_ssg_prop(items);
 
         if self.props.export.orig.is_none() {
@@ -100,12 +107,6 @@ impl VisitMut for NextSuperJsonTransformer {
             }
 
             self.props.skip = true;
-        }
-
-        self.find_page(items);
-
-        if self.page.export.orig.is_none() {
-            return;
         }
 
         let mut new_items = vec![];
