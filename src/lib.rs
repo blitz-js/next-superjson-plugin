@@ -17,10 +17,15 @@ use utils::*;
 mod utils;
 
 static SSG_EXPORTS: &[&str; 2] = &["getStaticProps", "getServerSideProps"];
+static INITIAL_PROPS: &str = "getInitialProps";
 
 // import { withSuperJSONProps as _withSuperJSONProps } from "next-superjson-plugin/tools";
 static SUPERJSON_PROPS_IMPORTED: &str = "withSuperJSONProps";
 static SUPERJSON_PROPS_LOCAL: &str = "_withSuperJSONProps";
+
+// import { withSuperJSONInitProps as _withSuperJSONInitProps } from "next-superjson-plugin/tools";
+static SUPERJSON_INIT_PROPS_IMPORTED: &str = "withSuperJSONInitProps";
+static SUPERJSON_INIT_PROPS_LOCAL: &str = "_withSuperJSONInitProps";
 
 // import { withSuperJSONPage as _withSuperJSONPage } from "next-superjson-plugin/tools";
 static SUPERJSON_PAGE_IMPORTED: &str = "withSuperJSONPage";
@@ -55,6 +60,9 @@ struct NextSuperJsonTransformer {
 
     props: TransformTarget,
     page: TransformTarget,
+
+    has_init_props: bool,
+    use_init_props: bool,
 }
 
 #[derive(Debug, Default, Clone, Deserialize)]
@@ -74,6 +82,9 @@ pub fn transform(config: Config) -> impl VisitMut {
 
         props: Default::default(),
         page: Default::default(),
+
+        has_init_props: false,
+        use_init_props: false,
     }
 }
 
@@ -81,19 +92,25 @@ impl Fold for NextSuperJsonTransformer {}
 
 impl VisitMut for NextSuperJsonTransformer {
     fn visit_mut_module_items(&mut self, items: &mut Vec<ModuleItem>) {
-        self.find_ssg_prop(items);
-
-        if self.props.export.orig.is_none() {
-            return;
-        }
-
         self.find_page(items);
 
         if self.page.export.orig.is_none() {
             return;
         }
 
+        self.find_ssg_prop(items);
+
+        if self.props.export.orig.is_none() {
+            if !self.use_init_props {
+                return;
+            }
+
+            self.props.skip = true;
+        }
+
         let mut new_items = vec![];
+
+        let mut temp_page = None;
 
         for (pos, item) in items.iter_mut().enumerate() {
             if self.props.ident.orig.is_some()
@@ -194,7 +211,7 @@ impl VisitMut for NextSuperJsonTransformer {
                     _ => {}
                 }
             } else {
-                if pos == self.props.export.orig.unwrap() && !self.props.skip {
+                if !self.props.skip && pos == self.props.export.orig.unwrap() {
                     match item {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl {
                             decl: export_decl,
@@ -303,16 +320,20 @@ impl VisitMut for NextSuperJsonTransformer {
                     }
                 }
 
+                let mut keep_page = false;
+
                 if pos == self.page.export.orig.unwrap() && !self.page.skip {
                     match item {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(
                             ExportDefaultExpr { expr, .. },
                         )) => {
+                            keep_page = self.use_init_props;
                             *expr = expr.take().wrap_page();
                         }
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(
                             ExportDefaultDecl { decl, .. },
                         )) => {
+                            keep_page = self.use_init_props;
                             // TODO: remove duplicate code
                             match decl {
                                 DefaultDecl::Class(class_expr) => {
@@ -390,7 +411,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                     src,
                                 ));
 
-                                new_items.push(ModuleItem::ModuleDecl(
+                                let new_page = ModuleItem::ModuleDecl(
                                     ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
                                         expr: Box::new(Expr::Ident(Ident::new(
                                             NEXT_PAGE_LOCAL.into(),
@@ -399,19 +420,29 @@ impl VisitMut for NextSuperJsonTransformer {
                                         .wrap_page(),
                                         span: DUMMY_SP,
                                     }),
-                                ));
+                                );
+                                if !self.use_init_props {
+                                    new_items.push(new_page);
+                                } else {
+                                    temp_page = Some(new_page);
+                                }
 
                             // export { Page as default }
                             // =>
                             // export default wrap(Page, excluded)
                             } else {
                                 if let ModuleExportName::Ident(id) = &s.orig {
-                                    new_items.push(ModuleItem::ModuleDecl(
+                                    let new_page = ModuleItem::ModuleDecl(
                                         ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
                                             expr: Box::new(Expr::Ident(id.clone())).wrap_page(),
                                             span: DUMMY_SP,
                                         }),
-                                    ))
+                                    );
+                                    if !self.use_init_props {
+                                        new_items.push(new_page);
+                                    } else {
+                                        temp_page = Some(new_page);
+                                    }
                                 }
                             }
 
@@ -427,14 +458,26 @@ impl VisitMut for NextSuperJsonTransformer {
                         ..
                     })) => {
                         if !specifiers.is_empty() {
-                            new_items.push(item.take());
+                            if !keep_page {
+                                new_items.push(item.take());
+                            } else {
+                                temp_page = Some(item.take());
+                            }
                         }
                     }
                     _ => {
-                        new_items.push(item.take());
+                        if !keep_page {
+                            new_items.push(item.take());
+                        } else {
+                            temp_page = Some(item.take());
+                        }
                     }
                 }
             }
+        }
+
+        if let Some(tmp) = temp_page {
+            new_items.push(tmp);
         }
 
         // TODO: these two stmts can be combined
@@ -442,6 +485,12 @@ impl VisitMut for NextSuperJsonTransformer {
             prepend_stmt(
                 &mut new_items,
                 superjson_import_decl(SUPERJSON_PROPS_IMPORTED),
+            );
+        }
+        if self.use_init_props {
+            prepend_stmt(
+                &mut new_items,
+                superjson_import_decl(SUPERJSON_INIT_PROPS_IMPORTED),
             );
         }
         if !self.page.skip {
@@ -452,6 +501,81 @@ impl VisitMut for NextSuperJsonTransformer {
         }
 
         *items = new_items;
+    }
+
+    fn visit_mut_class_member(&mut self, member: &mut ClassMember) {
+        member.visit_mut_children_with(self);
+        match member {
+            ClassMember::ClassProp(p) => {
+                if let PropName::Ident(id) = &p.key {
+                    if &*id.sym == INITIAL_PROPS {
+                        if let Some(expr) = &mut p.value {
+                            self.use_init_props = true;
+                            p.value = Some(expr.take().wrap_init_props(self.excluded_expr()));
+                        }
+                    }
+                }
+            }
+            ClassMember::Method(m) => {
+                if let PropName::Ident(id) = &m.key {
+                    if &*id.sym == INITIAL_PROPS {
+                        self.use_init_props = true;
+                        *member = ClassMember::ClassProp(ClassProp {
+                            accessibility: m.accessibility.take(),
+                            declare: false,
+                            decorators: vec![],
+                            definite: false,
+                            is_abstract: m.is_abstract,
+                            is_optional: m.is_optional,
+                            is_override: m.is_override,
+                            is_static: m.is_static,
+                            key: m.key.take(),
+                            readonly: false,
+                            span: DUMMY_SP,
+                            type_ann: None,
+                            value: Some(
+                                Box::new(Expr::Fn(FnExpr {
+                                    function: m.function.take(),
+                                    ident: None,
+                                }))
+                                .wrap_init_props(self.excluded_expr()),
+                            ),
+                        });
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn visit_mut_assign_expr(&mut self, a: &mut AssignExpr) {
+        a.visit_mut_children_with(self);
+
+        if a.left.is_expr() {
+            if let Some(mut expr) = a.left.take().expr() {
+                if let Some(MemberExpr { prop, .. }) = expr.as_mut_member() {
+                    prop.visit_mut_children_with(self);
+                }
+
+                if self.has_init_props {
+                    a.right = a.right.take().wrap_init_props(self.excluded_expr());
+                    self.use_init_props = true;
+                    self.has_init_props = false;
+                }
+
+                a.left = PatOrExpr::Expr(expr);
+            }
+        }
+    }
+
+    fn visit_mut_member_prop(&mut self, p: &mut MemberProp) {
+        p.visit_mut_children_with(self);
+
+        if let Some(id) = p.as_ident() {
+            if &*id.sym == INITIAL_PROPS {
+                self.has_init_props = true;
+            }
+        }
     }
 }
 
@@ -482,52 +606,61 @@ impl NextSuperJsonTransformer {
     pub fn find_ssg_prop(&mut self, items: &mut Vec<ModuleItem>) {
         let mut ssg_prop_ident = None;
 
-        self.props.export.orig = items.iter().position(|item| match item {
-            // check has ssg props
-            ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => match decl {
-                Decl::Fn(fn_decl) => SSG_EXPORTS.contains(&&*fn_decl.ident.sym),
-                Decl::Var(var_decl) => {
-                    self.props.export.decl = var_decl.decls.iter().position(|decl| {
-                        SSG_EXPORTS.contains(&&*decl.name.as_ident().unwrap().sym)
-                    });
+        self.props.export.orig = items.iter_mut().position(|item| {
+            // check initial props
+            item.visit_mut_children_with(self);
 
-                    self.props.export.decl.is_some()
+            match item {
+                // check has ssg props
+                ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
+                    match decl {
+                        Decl::Fn(fn_decl) => SSG_EXPORTS.contains(&&*fn_decl.ident.sym),
+                        Decl::Var(var_decl) => {
+                            self.props.export.decl = var_decl.decls.iter().position(|decl| {
+                                SSG_EXPORTS.contains(&&*decl.name.as_ident().unwrap().sym)
+                            });
+
+                            self.props.export.decl.is_some()
+                        }
+                        _ => false,
+                    }
+                }
+                ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport {
+                    specifiers,
+                    src,
+                    ..
+                })) => {
+                    self.props.export.spec =
+                        specifiers.iter().position(|specifier| match specifier {
+                            ExportSpecifier::Named(ExportNamedSpecifier {
+                                orig: ModuleExportName::Ident(orig_id),
+                                exported,
+                                ..
+                            }) => {
+                                let exported_as = match exported {
+                                    Some(ModuleExportName::Ident(exported_id)) => &exported_id.sym,
+                                    _ => &orig_id.sym,
+                                };
+
+                                if SSG_EXPORTS.contains(&&**exported_as) {
+                                    self.props.skip = src.is_some()
+                                        && (exported.is_none()
+                                            || (&&**exported_as == &&*orig_id.sym));
+
+                                    if !self.props.skip {
+                                        ssg_prop_ident = Some((*orig_id.sym).to_string());
+                                    }
+                                    return true;
+                                }
+                                false
+                            }
+                            _ => false,
+                        });
+
+                    self.props.export.spec.is_some()
                 }
                 _ => false,
-            },
-            ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport {
-                specifiers,
-                src,
-                ..
-            })) => {
-                self.props.export.spec = specifiers.iter().position(|specifier| match specifier {
-                    ExportSpecifier::Named(ExportNamedSpecifier {
-                        orig: ModuleExportName::Ident(orig_id),
-                        exported,
-                        ..
-                    }) => {
-                        let exported_as = match exported {
-                            Some(ModuleExportName::Ident(exported_id)) => &exported_id.sym,
-                            _ => &orig_id.sym,
-                        };
-
-                        if SSG_EXPORTS.contains(&&**exported_as) {
-                            self.props.skip = src.is_some()
-                                && (exported.is_none() || (&&**exported_as == &&*orig_id.sym));
-
-                            if !self.props.skip {
-                                ssg_prop_ident = Some((*orig_id.sym).to_string());
-                            }
-                            return true;
-                        }
-                        false
-                    }
-                    _ => false,
-                });
-
-                self.props.export.spec.is_some()
             }
-            _ => false,
         });
 
         if ssg_prop_ident.is_some() && !self.props.skip {

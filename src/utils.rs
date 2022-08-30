@@ -4,7 +4,7 @@ use swc_plugin::{
     utils::{take::Take, ExprFactory},
 };
 
-use crate::{SUPERJSON_PROPS_LOCAL, SUPERJSON_PAGE_LOCAL, NEXT_SSG_PROPS_LOCAL, NEXT_SSG_PROPS_ORIG};
+use crate::{SUPERJSON_PROPS_LOCAL, SUPERJSON_PAGE_LOCAL, NEXT_SSG_PROPS_LOCAL, NEXT_SSG_PROPS_ORIG, SUPERJSON_INIT_PROPS_LOCAL};
 
 pub fn superjson_import_decl(superjson_import_name: &str) -> ModuleItem {
     ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
@@ -82,6 +82,7 @@ pub fn temp_import_item(imported: ModuleExportName, local: &str, src: &mut Str) 
 
 pub trait Wrapper {
     fn wrap_props(self, excluded: ExprOrSpread) -> Box<Expr>;
+    fn wrap_init_props(self, excluded: ExprOrSpread) -> Box<Expr>;
     fn wrap_page(self) -> Box<Expr>;
 }
 
@@ -90,6 +91,14 @@ impl Wrapper for Box<Expr> {
         Box::new(Expr::Call(CallExpr {
             args: vec![self.as_arg(), excluded],
             callee: Ident::new(SUPERJSON_PROPS_LOCAL.into(), DUMMY_SP).as_callee(),
+            span: DUMMY_SP,
+            type_args: None,
+        }))
+    }
+    fn wrap_init_props(self, excluded: ExprOrSpread) -> Box<Expr> {
+        Box::new(Expr::Call(CallExpr {
+            args: vec![self.as_arg(), excluded],
+            callee: Ident::new(SUPERJSON_INIT_PROPS_LOCAL.into(), DUMMY_SP).as_callee(),
             span: DUMMY_SP,
             type_args: None,
         }))
