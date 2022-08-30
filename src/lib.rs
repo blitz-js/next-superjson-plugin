@@ -327,13 +327,13 @@ impl VisitMut for NextSuperJsonTransformer {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(
                             ExportDefaultExpr { expr, .. },
                         )) => {
-                            keep_page = self.use_init_props;
+                            keep_page = true;
                             *expr = expr.take().wrap_page();
                         }
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(
                             ExportDefaultDecl { decl, .. },
                         )) => {
-                            keep_page = self.use_init_props;
+                            keep_page = true;
                             // TODO: remove duplicate code
                             match decl {
                                 DefaultDecl::Class(class_expr) => {
@@ -421,11 +421,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                         span: DUMMY_SP,
                                     }),
                                 );
-                                if !self.use_init_props {
-                                    new_items.push(new_page);
-                                } else {
-                                    temp_page = Some(new_page);
-                                }
+                                temp_page = Some(new_page);
 
                             // export { Page as default }
                             // =>
@@ -438,11 +434,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                             span: DUMMY_SP,
                                         }),
                                     );
-                                    if !self.use_init_props {
-                                        new_items.push(new_page);
-                                    } else {
-                                        temp_page = Some(new_page);
-                                    }
+                                    temp_page = Some(new_page);
                                 }
                             }
 
