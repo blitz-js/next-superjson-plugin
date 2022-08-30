@@ -327,11 +327,13 @@ impl VisitMut for NextSuperJsonTransformer {
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultExpr(
                             ExportDefaultExpr { expr, .. },
                         )) => {
+                            keep_page = self.use_init_props;
                             *expr = expr.take().wrap_page();
                         }
                         ModuleItem::ModuleDecl(ModuleDecl::ExportDefaultDecl(
                             ExportDefaultDecl { decl, .. },
                         )) => {
+                            keep_page = self.use_init_props;
                             // TODO: remove duplicate code
                             match decl {
                                 DefaultDecl::Class(class_expr) => {
@@ -409,7 +411,7 @@ impl VisitMut for NextSuperJsonTransformer {
                                     src,
                                 ));
 
-                                new_items.push(ModuleItem::ModuleDecl(
+                                let new_page = ModuleItem::ModuleDecl(
                                     ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
                                         expr: Box::new(Expr::Ident(Ident::new(
                                             NEXT_PAGE_LOCAL.into(),
@@ -418,19 +420,29 @@ impl VisitMut for NextSuperJsonTransformer {
                                         .wrap_page(),
                                         span: DUMMY_SP,
                                     }),
-                                ));
+                                );
+                                if !self.use_init_props {
+                                    new_items.push(new_page);
+                                } else {
+                                    temp_page = Some(new_page);
+                                }
 
                             // export { Page as default }
                             // =>
                             // export default wrap(Page, excluded)
                             } else {
                                 if let ModuleExportName::Ident(id) = &s.orig {
-                                    new_items.push(ModuleItem::ModuleDecl(
+                                    let new_page = ModuleItem::ModuleDecl(
                                         ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
                                             expr: Box::new(Expr::Ident(id.clone())).wrap_page(),
                                             span: DUMMY_SP,
                                         }),
-                                    ))
+                                    );
+                                    if !self.use_init_props {
+                                        new_items.push(new_page);
+                                    } else {
+                                        temp_page = Some(new_page);
+                                    }
                                 }
                             }
 
@@ -438,7 +450,6 @@ impl VisitMut for NextSuperJsonTransformer {
                         }
                         _ => {}
                     }
-                    keep_page = self.use_init_props;
                 }
 
                 match item {
