@@ -1,7 +1,7 @@
 # 🔌 NEXT SUPERJSON PLUGIN
 
 ```jsx
-export default Page({ date }) {
+export default function Page({ date }) {
   return (
     <div>
       Today is {date.toDateString()}
