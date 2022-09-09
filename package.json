@@ -18,7 +18,7 @@
     ],
     "main": "next_superjson.wasm",
     "scripts": {
-        "prepack": "tsc && cp target/wasm32-wasi/release/next_superjson.wasm ."
+        "prepack": "tsc && cp target/wasm32-unknown-unknown/release/next_superjson.wasm ."
     },
     "files": ["tools.*"],
     "peerDependencies": {
