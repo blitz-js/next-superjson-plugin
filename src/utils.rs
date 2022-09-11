@@ -1,10 +1,12 @@
-use swc_plugin::{
-    ast::*,
-    syntax_pos::DUMMY_SP,
-    utils::{take::Take, ExprFactory},
+use swc_core::{
+    common::{util::take::Take, DUMMY_SP},
+    ecma::{ast::*, utils::ExprFactory},
 };
 
-use crate::{SUPERJSON_PROPS_LOCAL, SUPERJSON_PAGE_LOCAL, NEXT_SSG_PROPS_LOCAL, NEXT_SSG_PROPS_ORIG, SUPERJSON_INIT_PROPS_LOCAL};
+use crate::{
+    NEXT_SSG_PROPS_LOCAL, NEXT_SSG_PROPS_ORIG, SUPERJSON_INIT_PROPS_LOCAL, SUPERJSON_PAGE_LOCAL,
+    SUPERJSON_PROPS_LOCAL,
+};
 
 pub fn superjson_import_decl(superjson_import_name: &str) -> ModuleItem {
     ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
@@ -58,26 +60,19 @@ pub fn temp_props_item(excluded: ExprOrSpread) -> ModuleItem {
 }
 
 pub fn temp_import_item(imported: ModuleExportName, local: &str, src: &mut Str) -> ModuleItem {
-    ModuleItem::ModuleDecl(ModuleDecl::Import(
-        ImportDecl {
-            asserts: None,
+    ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
+        asserts: None,
+        span: DUMMY_SP,
+        specifiers: vec![ImportSpecifier::Named(ImportNamedSpecifier {
+            imported: Some(imported),
+            is_type_only: false,
+            local: Ident::new(local.into(), DUMMY_SP),
             span: DUMMY_SP,
-            specifiers: vec![ImportSpecifier::Named(
-                ImportNamedSpecifier {
-                    imported: Some(imported),
-                    is_type_only: false,
-                    local: Ident::new(
-                        local.into(),
-                        DUMMY_SP,
-                    ),
-                    span: DUMMY_SP,
-                },
-            )],
-            // should clone
-            src: src.clone(),
-            type_only: false,
-        },
-    ))
+        })],
+        // should clone
+        src: src.clone(),
+        type_only: false,
+    }))
 }
 
 pub trait Wrapper {
@@ -123,10 +118,13 @@ impl DeclUtil for FnDecl {
             declare: false,
             decls: vec![VarDeclarator {
                 definite: false,
-                init: Some(Box::new(Expr::Fn(FnExpr {
-                    function: self.function.take(),
-                    ident: None,
-                })).wrap_props(excluded)),
+                init: Some(
+                    Box::new(Expr::Fn(FnExpr {
+                        function: self.function.take(),
+                        ident: None,
+                    }))
+                    .wrap_props(excluded),
+                ),
                 name: Pat::Ident(BindingIdent {
                     id: self.ident.take(),
                     type_ann: None,
