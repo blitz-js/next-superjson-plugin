@@ -21,6 +21,7 @@ swc_core = {version = "=0.22.4", features = [
   "ecma_transforms",
   "common",
 ]}
+swc_common = {version = "0.28.1", features = ["concurrent"]}
 
 [dev-dependencies]
 swc_ecma_parser = "0.119.2"

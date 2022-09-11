@@ -646,6 +646,7 @@ version = "0.4.0"
 dependencies = [
  "serde",
  "serde_json",
+ "swc_common 0.28.1",
  "swc_core",
  "swc_ecma_parser",
  "testing 0.26.0",
