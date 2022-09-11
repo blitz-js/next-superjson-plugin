@@ -25,3 +25,7 @@ swc_core = {version = "=0.22.4", features = [
 [dev-dependencies]
 swc_ecma_parser = "0.119.2"
 testing = "0.26.0"
+
+[profile.release]
+lto = true
+strip = true
