@@ -4,12 +4,17 @@ use std::{
 };
 
 use serde::Deserialize;
-use swc_plugin::{
-    ast::*,
-    metadata::{TransformPluginMetadataContextKind, TransformPluginProgramMetadata},
-    plugin_transform,
-    syntax_pos::DUMMY_SP,
-    utils::{prepend_stmt, take::Take, ExprFactory},
+use swc_core::{
+    common::{util::take::Take, DUMMY_SP},
+    ecma::{
+        ast::*,
+        utils::{prepend_stmt, ExprFactory},
+        visit::*,
+    },
+    plugin::{
+        metadata::TransformPluginMetadataContextKind, plugin_transform,
+        proxies::TransformPluginProgramMetadata,
+    },
 };
 
 use utils::*;

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
-use swc_ecma_transforms_testing::{test, test_fixture};
-use swc_ecma_parser::{Syntax, EsConfig};
+use swc_core::ecma::transforms::testing::test_fixture;
+use swc_ecma_parser::{EsConfig, Syntax};
 
 use testing::fixture;
 
@@ -21,9 +21,11 @@ fn fixture(input: PathBuf) {
             jsx: true,
             ..Default::default()
         }),
-        &|_| next_superjson::plugin(Config {
-            excluded: vec!["smth".to_string()],
-        }),
+        &|_| {
+            next_superjson::plugin(Config {
+                excluded: vec!["smth".to_string()],
+            })
+        },
         &input,
         &output,
     );
