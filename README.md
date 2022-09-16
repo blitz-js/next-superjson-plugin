@@ -20,7 +20,7 @@ export const getServerSideProps = () => {
 ```
 
 <p align="middle">
-<strong> SWC Plugin for Next.js (≥ v12.2.4)</strong>
+<strong> SWC Plugin for Next.js (> v12.3.0)</strong>
 </p>
 
 This plugin allows the pre-rendering functions to return props **including complex objects(Date, Map, Set..) that cannot be serialized by standard JSON.**

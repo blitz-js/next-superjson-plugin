@@ -22,7 +22,7 @@
     },
     "files": ["tools.*"],
     "peerDependencies": {
-        "next": ">=12.2.0",
+        "next": ">12.3.0",
         "superjson": "^1"
     },
     "dependencies": {
@@ -30,7 +30,7 @@
     },
     "devDependencies": {
         "@types/hoist-non-react-statics": "^3.3.1",
-        "next": ">=12.2.0",
+        "next": "12.3.1-canary.2",
         "superjson": "^1",
         "typescript": "^4.7.4"
     }
