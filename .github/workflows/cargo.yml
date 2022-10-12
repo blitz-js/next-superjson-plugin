@@ -2,6 +2,7 @@ name: Cargo
 
 on:
   push:
+    branches: [canary]
     paths:
       - 'src/**'
       - 'tests/**'
