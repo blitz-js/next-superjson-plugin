@@ -10,9 +10,11 @@ type SuperJSONProps<P> = P & {
 };
 
 export function withSuperJSONProps<P>(
-  gssp: GetServerSideProps<P>,
+  gssp: GetServerSideProps<P> | undefined,
   exclude: string[] = []
-): GetServerSideProps<SuperJSONProps<P>> {
+): GetServerSideProps<SuperJSONProps<P>> | undefined {
+  if (gssp === undefined)
+    return undefined;
   return async function withSuperJSON(...args) {
     const result = await gssp(...args);
 
@@ -55,6 +57,8 @@ export function withSuperJSONInitProps(
   gip: any,
   exclude: string[] = []
 ): any {
+  if (gip === undefined)
+    return undefined;
   return async function withSuperJSON(...args: any[]) {
     const result = await gip(...args);
 
