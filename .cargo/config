@@ -2,3 +2,6 @@
 [alias]
 # Alias to build actual plugin binary for the specified target.
 prepublish = "build --target wasm32-wasi"
+
+[target.wasm32-unknown-unknown]
+rustflags = "-C target-feature=+relaxed-simd"
