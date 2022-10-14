@@ -68,6 +68,8 @@ struct NextSuperJsonTransformer {
 
     has_init_props: bool,
     use_init_props: bool,
+
+    has_multiple_props: bool,
 }
 
 #[derive(Debug, Default, Clone, Deserialize)]
@@ -90,6 +92,8 @@ pub fn transform(config: Config) -> impl VisitMut {
 
         has_init_props: false,
         use_init_props: false,
+
+        has_multiple_props: false,
     }
 }
 
@@ -106,7 +110,7 @@ impl VisitMut for NextSuperJsonTransformer {
         self.find_ssg_prop(items);
 
         if self.props.export.orig.is_none() {
-            if !self.use_init_props {
+            if !self.use_init_props || self.has_multiple_props {
                 return;
             }
 
@@ -603,11 +607,13 @@ impl NextSuperJsonTransformer {
     pub fn find_ssg_prop(&mut self, items: &mut Vec<ModuleItem>) {
         let mut ssg_prop_ident = None;
 
-        self.props.export.orig = items.iter_mut().position(|item| {
+        let mut first = None;
+
+        items.iter_mut().enumerate().any(|(pos, item)| {
             // check initial props
             item.visit_mut_children_with(self);
 
-            match item {
+            let found = match item {
                 // check has ssg props
                 ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
                     match decl {
@@ -657,8 +663,24 @@ impl NextSuperJsonTransformer {
                     self.props.export.spec.is_some()
                 }
                 _ => false,
+            };
+
+            if found {
+                if first.is_some() || self.use_init_props {
+                    self.has_multiple_props = true;
+                    return true;
+                }
+                first = Some(pos);
             }
+
+            false
         });
+
+        if self.has_multiple_props {
+            return;
+        }
+
+        self.props.export.orig = first;
 
         if ssg_prop_ident.is_some() && !self.props.skip {
             let mut n = items.len();
