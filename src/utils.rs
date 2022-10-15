@@ -28,16 +28,16 @@ pub fn superjson_import_decl(superjson_import_name: &str) -> ModuleItem {
             })),
             is_type_only: false,
         })],
-        src: Str {
+        src: Box::new(Str {
             span: DUMMY_SP,
             value: "next-superjson-plugin/tools".into(),
             raw: None,
-        },
+        }),
     }))
 }
 
 pub fn temp_props_item(excluded: ExprOrSpread) -> ModuleItem {
-    ModuleItem::Stmt(Stmt::Decl(Decl::Var(VarDecl {
+    ModuleItem::Stmt(Stmt::Decl(Decl::Var(Box::new(VarDecl {
         declare: false,
         decls: vec![VarDeclarator {
             definite: false,
@@ -56,7 +56,7 @@ pub fn temp_props_item(excluded: ExprOrSpread) -> ModuleItem {
         }],
         kind: VarDeclKind::Const,
         span: DUMMY_SP,
-    })))
+    }))))
 }
 
 pub fn temp_import_item(imported: ModuleExportName, local: &str, src: &mut Str) -> ModuleItem {
@@ -70,7 +70,7 @@ pub fn temp_import_item(imported: ModuleExportName, local: &str, src: &mut Str) 
             span: DUMMY_SP,
         })],
         // should clone
-        src: src.clone(),
+        src: Box::new(src.clone()),
         type_only: false,
     }))
 }
@@ -114,7 +114,7 @@ pub trait DeclUtil {
 
 impl DeclUtil for FnDecl {
     fn as_wrapped_var_decl(mut self, excluded: ExprOrSpread) -> Decl {
-        Decl::Var(VarDecl {
+        Decl::Var(Box::new(VarDecl {
             declare: false,
             decls: vec![VarDeclarator {
                 definite: false,
@@ -133,6 +133,6 @@ impl DeclUtil for FnDecl {
             }],
             kind: VarDeclKind::Const,
             span: DUMMY_SP,
-        })
+        }))
     }
 }

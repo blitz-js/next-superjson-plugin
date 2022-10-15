@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use swc_core::ecma::transforms::testing::test_fixture;
+use swc_core::ecma::transforms::testing::{test_fixture, FixtureTestConfig};
 use swc_ecma_parser::{EsConfig, Syntax};
 
 use testing::fixture;
@@ -28,5 +28,8 @@ fn fixture(input: PathBuf) {
         },
         &input,
         &output,
+        FixtureTestConfig {
+            ..Default::default()
+        }
     );
 }
