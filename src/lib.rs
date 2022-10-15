@@ -68,6 +68,7 @@ struct NextSuperJsonTransformer {
 
     has_init_props: bool,
     use_init_props: bool,
+    keep_init_props: bool,
 
     has_multiple_props: bool,
 }
@@ -92,6 +93,7 @@ pub fn transform(config: Config) -> impl VisitMut {
 
         has_init_props: false,
         use_init_props: false,
+        keep_init_props: false,
 
         has_multiple_props: false,
     }
@@ -512,7 +514,9 @@ impl VisitMut for NextSuperJsonTransformer {
                     if &*id.sym == INITIAL_PROPS {
                         if let Some(expr) = &mut p.value {
                             self.use_init_props = true;
-                            p.value = Some(expr.take().wrap_init_props(self.excluded_expr()));
+                            if !self.keep_init_props {
+                                p.value = Some(expr.take().wrap_init_props(self.excluded_expr()));
+                            }
                         }
                     }
                 }
@@ -521,27 +525,29 @@ impl VisitMut for NextSuperJsonTransformer {
                 if let PropName::Ident(id) = &m.key {
                     if &*id.sym == INITIAL_PROPS {
                         self.use_init_props = true;
-                        *member = ClassMember::ClassProp(ClassProp {
-                            accessibility: m.accessibility.take(),
-                            declare: false,
-                            decorators: vec![],
-                            definite: false,
-                            is_abstract: m.is_abstract,
-                            is_optional: m.is_optional,
-                            is_override: m.is_override,
-                            is_static: m.is_static,
-                            key: m.key.take(),
-                            readonly: false,
-                            span: DUMMY_SP,
-                            type_ann: None,
-                            value: Some(
-                                Box::new(Expr::Fn(FnExpr {
-                                    function: m.function.take(),
-                                    ident: None,
-                                }))
-                                .wrap_init_props(self.excluded_expr()),
-                            ),
-                        });
+                        if !self.keep_init_props {
+                            *member = ClassMember::ClassProp(ClassProp {
+                                accessibility: m.accessibility.take(),
+                                declare: false,
+                                decorators: vec![],
+                                definite: false,
+                                is_abstract: m.is_abstract,
+                                is_optional: m.is_optional,
+                                is_override: m.is_override,
+                                is_static: m.is_static,
+                                key: m.key.take(),
+                                readonly: false,
+                                span: DUMMY_SP,
+                                type_ann: None,
+                                value: Some(
+                                    Box::new(Expr::Fn(FnExpr {
+                                        function: m.function.take(),
+                                        ident: None,
+                                    }))
+                                    .wrap_init_props(self.excluded_expr()),
+                                ),
+                            });
+                        }
                     }
                 }
             }
@@ -559,7 +565,9 @@ impl VisitMut for NextSuperJsonTransformer {
                 }
 
                 if self.has_init_props {
-                    a.right = a.right.take().wrap_init_props(self.excluded_expr());
+                    if !self.keep_init_props {
+                        a.right = a.right.take().wrap_init_props(self.excluded_expr());
+                    }
                     self.use_init_props = true;
                     self.has_init_props = false;
                 }
@@ -677,11 +685,16 @@ impl NextSuperJsonTransformer {
             return;
         }
 
+        self.keep_init_props = first.is_some();
+
         // check initial props
-        if first.is_none() {
-            items
-                .iter_mut()
-                .for_each(|item| item.visit_mut_children_with(self));
+        items
+            .iter_mut()
+            .for_each(|item| item.visit_mut_children_with(self));
+
+        if first.is_some() && self.use_init_props {
+            self.has_multiple_props = true;
+            return;
         }
 
         self.props.export.orig = first;
