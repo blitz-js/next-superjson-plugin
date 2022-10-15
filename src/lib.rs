@@ -610,9 +610,6 @@ impl NextSuperJsonTransformer {
         let mut first = None;
 
         items.iter_mut().enumerate().any(|(pos, item)| {
-            // check initial props
-            item.visit_mut_children_with(self);
-
             let found = match item {
                 // check has ssg props
                 ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) => {
@@ -666,7 +663,7 @@ impl NextSuperJsonTransformer {
             };
 
             if found {
-                if first.is_some() || self.use_init_props {
+                if first.is_some() {
                     self.has_multiple_props = true;
                     return true;
                 }
@@ -678,6 +675,13 @@ impl NextSuperJsonTransformer {
 
         if self.has_multiple_props {
             return;
+        }
+
+        // check initial props
+        if first.is_none() {
+            items
+                .iter_mut()
+                .for_each(|item| item.visit_mut_children_with(self));
         }
 
         self.props.export.orig = first;
