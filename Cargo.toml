@@ -24,7 +24,7 @@ swc_core = {version = "0.38.*", features = [
 swc_common = {version = "0.29.8", features = ["concurrent"]}
 
 [dev-dependencies]
-swc_ecma_parser = "0.122.12"
+swc_ecma_parser = "0.122.13"
 testing = "0.31.8"
 
 [profile.release]
