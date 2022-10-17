@@ -20,7 +20,9 @@
     "scripts": {
         "prepack": "tsc && cp target/wasm32-wasi/release/next_superjson.wasm ."
     },
-    "files": ["tools.*"],
+    "files": [
+        "tools.*"
+    ],
     "peerDependencies": {
         "next": ">12.3.0",
         "superjson": "^1"
