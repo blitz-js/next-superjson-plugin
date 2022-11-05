@@ -1,6 +1,6 @@
 {
     "name": "next-superjson-plugin",
-    "version": "0.4.8",
+    "version": "0.4.9",
     "description": "Automatically transform your Next.js Pages to use SuperJSON with SWC",
     "author": "JH.Lee <contact@jins.dev>",
     "homepage": "https://github.com/blitz-js/next-superjson-plugin#readme",
