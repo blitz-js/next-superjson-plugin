@@ -624,11 +624,15 @@ impl NextSuperJsonTransformer {
                     match decl {
                         Decl::Fn(fn_decl) => SSG_EXPORTS.contains(&&*fn_decl.ident.sym),
                         Decl::Var(var_decl) => {
-                            self.props.export.decl = var_decl.decls.iter().position(|decl| {
+                            let pos = var_decl.decls.iter().position(|decl| {
                                 SSG_EXPORTS.contains(&&*decl.name.as_ident().unwrap().sym)
                             });
 
-                            self.props.export.decl.is_some()
+                            if self.props.export.decl.is_none() {
+                                self.props.export.decl = pos;
+                            }
+
+                            pos.is_some()
                         }
                         _ => false,
                     }
@@ -638,34 +642,36 @@ impl NextSuperJsonTransformer {
                     src,
                     ..
                 })) => {
-                    self.props.export.spec =
-                        specifiers.iter().position(|specifier| match specifier {
-                            ExportSpecifier::Named(ExportNamedSpecifier {
-                                orig: ModuleExportName::Ident(orig_id),
-                                exported,
-                                ..
-                            }) => {
-                                let exported_as = match exported {
-                                    Some(ModuleExportName::Ident(exported_id)) => &exported_id.sym,
-                                    _ => &orig_id.sym,
-                                };
+                    let pos = specifiers.iter().position(|specifier| match specifier {
+                        ExportSpecifier::Named(ExportNamedSpecifier {
+                            orig: ModuleExportName::Ident(orig_id),
+                            exported,
+                            ..
+                        }) => {
+                            let exported_as = match exported {
+                                Some(ModuleExportName::Ident(exported_id)) => &exported_id.sym,
+                                _ => &orig_id.sym,
+                            };
 
-                                if SSG_EXPORTS.contains(&&**exported_as) {
-                                    self.props.skip = src.is_some()
-                                        && (exported.is_none()
-                                            || (&&**exported_as == &&*orig_id.sym));
+                            if SSG_EXPORTS.contains(&&**exported_as) {
+                                self.props.skip = src.is_some()
+                                    && (exported.is_none() || (&&**exported_as == &&*orig_id.sym));
 
-                                    if !self.props.skip {
-                                        ssg_prop_ident = Some((*orig_id.sym).to_string());
-                                    }
-                                    return true;
+                                if !self.props.skip {
+                                    ssg_prop_ident = Some((*orig_id.sym).to_string());
                                 }
-                                false
+                                return true;
                             }
-                            _ => false,
-                        });
+                            false
+                        }
+                        _ => false,
+                    });
 
-                    self.props.export.spec.is_some()
+                    if self.props.export.spec.is_none() {
+                        self.props.export.spec = pos;
+                    }
+
+                    pos.is_some()
                 }
                 _ => false,
             };
