@@ -5,3 +5,4 @@ target
 /dist
 /tools.*
 *.wasm
+.DS_Store
