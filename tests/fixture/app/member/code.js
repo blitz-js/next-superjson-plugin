@@ -1,6 +1,5 @@
-import { SuperJSONComponent } from "next-superjson-plugin/tools";
 import ServerComponent from "./ServerComponent";
-import ClientComponent from "./ClientComponent";
+import Client from "./Client";
 
 export default function Page() {
   const rest = {};
@@ -9,7 +8,7 @@ export default function Page() {
   return (
     <>
       <ServerComponent date={date} />
-      <SuperJSONComponent date={date} {...rest} _component={ClientComponent} />
+      <Client.Component date={date} {...rest} data-superjson />
     </>
   );
 }
