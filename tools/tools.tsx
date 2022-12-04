@@ -101,3 +101,12 @@ export function withSuperJSONPage<P>(
 
   return WithSuperJSON;
 }
+
+export function serialize<P>(props: P): SuperJSONProps<P> {
+  const { json, meta: _superjson } = SuperJSON.serialize(props);
+
+  return {
+    ...(json as any),
+    _superjson,
+  };
+}
