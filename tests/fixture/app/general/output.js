@@ -1,4 +1,5 @@
-import { SuperJSONComponent } from "next-superjson-plugin/tools";
+import { serialize } from "next-superjson-plugin/tools";
+import SuperJSONComponent from "next-superjson-plugin/client";
 import ServerComponent from "./ServerComponent";
 import ClientComponent from "./ClientComponent";
 
@@ -8,6 +9,12 @@ export default function Page() {
 
   return <>
       <ServerComponent date={date} />
-      <SuperJSONComponent date={date} {...rest} _component={ClientComponent} />
+      <SuperJSONComponent
+        props={serialize({
+          date: date,
+          ...rest,
+        })}
+        component={ClientComponent}
+      />
     </>;
 }
