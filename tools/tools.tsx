@@ -1,12 +1,12 @@
 // original tool source from 'babel-plugin-superjson-next'
 
-import * as hoistNonReactStatics from 'hoist-non-react-statics';
-import type { GetServerSideProps } from 'next';
-import * as React from 'react';
-import SuperJSON from 'superjson';
+import * as hoistNonReactStatics from "hoist-non-react-statics";
+import type { GetServerSideProps } from "next";
+import * as React from "react";
+import SuperJSON from "superjson";
 
-type SuperJSONProps<P> = P & {
-  _superjson?: ReturnType<typeof SuperJSON.serialize>['meta'];
+export type SuperJSONProps<P> = P & {
+  _superjson?: ReturnType<typeof SuperJSON.serialize>["meta"];
 };
 
 export function withSuperJSONProps<P>(
@@ -16,7 +16,7 @@ export function withSuperJSONProps<P>(
   return async function withSuperJSON(...args) {
     const result = await gssp(...args);
 
-    if (!('props' in result)) {
+    if (!("props" in result)) {
       return result;
     }
 
@@ -39,7 +39,7 @@ export function withSuperJSONProps<P>(
 
     exclude.forEach((key, index) => {
       const excludedPropValue = excludedPropValues[index];
-      if (typeof excludedPropValue !== 'undefined') {
+      if (typeof excludedPropValue !== "undefined") {
         props[key] = excludedPropValue;
       }
     });
@@ -51,10 +51,7 @@ export function withSuperJSONProps<P>(
   };
 }
 
-export function withSuperJSONInitProps(
-  gip: any,
-  exclude: string[] = []
-): any {
+export function withSuperJSONInitProps(gip: any, exclude: string[] = []): any {
   return async function withSuperJSON(...args: any[]) {
     const result = await gip(...args);
 
@@ -73,7 +70,7 @@ export function withSuperJSONInitProps(
 
     exclude.forEach((key, index) => {
       const excludedPropValue = excludedPropValues[index];
-      if (typeof excludedPropValue !== 'undefined') {
+      if (typeof excludedPropValue !== "undefined") {
         props[key] = excludedPropValue;
       }
     });
@@ -100,4 +97,13 @@ export function withSuperJSONPage<P>(
   hoistNonReactStatics(WithSuperJSON, Page);
 
   return WithSuperJSON;
+}
+
+export function serialize<P>(props: P): SuperJSONProps<P> {
+  const { json, meta: _superjson } = SuperJSON.serialize(props);
+
+  return {
+    ...(json as any),
+    _superjson,
+  };
 }

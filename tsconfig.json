@@ -5,7 +5,7 @@
     "sourceMap": true,
     "target": "ES5",
     "rootDir": "tools",
-    "outDir": "",
+    "outDir": "dist",
     "strict": true,
     "moduleResolution": "node",
     "jsx": "react",
