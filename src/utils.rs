@@ -3,7 +3,7 @@ use swc_core::{
     ecma::{ast::*, utils::ExprFactory},
 };
 
-use crate::{
+use crate::page::{
     NEXT_SSG_PROPS_LOCAL, NEXT_SSG_PROPS_ORIG, SUPERJSON_INIT_PROPS_LOCAL, SUPERJSON_PAGE_LOCAL,
     SUPERJSON_PROPS_LOCAL,
 };
