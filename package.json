@@ -17,12 +17,17 @@
     "swc-plugin"
   ],
   "main": "next_superjson.wasm",
+  "exports": {
+    ".": "./dist/next_superjson.wasm",
+    "./tools": "./dist/tools.js",
+    "./client": "./dist/client.js"
+  },
   "scripts": {
-    "prepack": "tsc && cp target/wasm32-wasi/release/next_superjson.wasm .",
+    "prepack": "tsc && cp target/wasm32-wasi/release/next_superjson.wasm ./dist",
     "prepare": "husky install"
   },
   "files": [
-    "tools.*"
+    "dist"
   ],
   "peerDependencies": {
     "next": "^13",
