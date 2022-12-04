@@ -2,21 +2,17 @@
 
 ```jsx
 export default function Page({ date }) {
-  return (
-    <div>
-      Today is {date.toDateString()}
-    </div>
-  )
+  return <div>Today is {date.toDateString()}</div>;
 }
 
 // You can also use getInitialProps, getStaticProps
 export const getServerSideProps = () => {
   return {
     props: {
-      date: new Date()
-    }
-  }
-}
+      date: new Date(),
+    },
+  };
+};
 ```
 
 <p align="middle">
@@ -45,17 +41,33 @@ Add the plugin into `next.config.js`
 // next.config.js
 module.exports = {
   experimental: {
-    swcPlugins: [
-      ['next-superjson-plugin', {}],
-    ],
+    swcPlugins: [["next-superjson-plugin", {}]],
   },
-}
+};
 ```
 
 ### Options
+
 You can use the `excluded` option to exclude specific properties from serialization.
+
 ```js
 ['next-superjson-plugin', { excluded: ["someProp"] }],
+```
+
+### Server Component -> Client Component
+
+```jsx
+export default function ServerComponent() {
+  const date = new Date();
+  return (
+    <>
+      <AnotherServerComponent date={date} />
+
+      {/* Use "data-superjson" attribute to pass non-serializable props to client components */}
+      <ClientComponent date={date} data-superjson />
+    </>
+  );
+}
 ```
 
 ## How it works
@@ -73,7 +85,7 @@ sequenceDiagram
     Note over SWC Plugin: getInitialProps <br> getServerSideProps <br> getStaticProps
     SuperJSON->>Next.js: Deserialize Props
     Note over SWC Plugin: Page Component
-    
+
 ```
 
 ## Contributing
@@ -81,4 +93,5 @@ sequenceDiagram
 [Leave an issue](https://github.com/orionmiz/next-superjson-plugin/issues)
 
 ## Special Thanks
+
 - [kdy1](https://github.com/kdy1) (Main creator of swc project)
