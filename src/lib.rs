@@ -40,29 +40,29 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
     let cwd = &raw_cwd.replace('\\', "/");
     let path = &raw_path.replace('\\', "/");
 
-    let relative_path = path
-        .strip_prefix(cwd)
-        .unwrap_or_else(|| panic!("Unhandled path: cwd: {}, path: {}", cwd, path));
+    if let Some(relative_path) = path.strip_prefix(cwd) {
+        let dir_type =
+            if relative_path.starts_with("/pages") || relative_path.starts_with("/src/pages") {
+                DirType::Page
+            } else if relative_path.starts_with("/app") || relative_path.starts_with("/src/app") {
+                DirType::App
+            } else {
+                // not page or app
+                return program;
+            };
 
-    let dir_type = if relative_path.starts_with("/pages") || relative_path.starts_with("/src/pages")
-    {
-        DirType::Page
-    } else if relative_path.starts_with("/app") || relative_path.starts_with("/src/app") {
-        DirType::App
+        let config = serde_json::from_str::<Config>(
+            &_metadata
+                .get_transform_plugin_config()
+                .unwrap_or_else(|| "{}".to_string()),
+        )
+        .expect("Failed to parse plugin config");
+
+        match dir_type {
+            DirType::Page => program.fold_with(&mut as_folder(transform_page(config))),
+            DirType::App => program.fold_with(&mut as_folder(transform_app(config))),
+        }
     } else {
-        // not page or app
-        return program;
-    };
-
-    let config = serde_json::from_str::<Config>(
-        &_metadata
-            .get_transform_plugin_config()
-            .unwrap_or_else(|| "{}".to_string()),
-    )
-    .expect("Failed to parse plugin config");
-
-    match dir_type {
-        DirType::Page => program.fold_with(&mut as_folder(transform_page(config))),
-        DirType::App => program.fold_with(&mut as_folder(transform_app(config))),
+        program
     }
 }
