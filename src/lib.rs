@@ -40,7 +40,9 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
     let cwd = &raw_cwd.replace('\\', "/");
     let path = &raw_path.replace('\\', "/");
 
-    let relative_path = path.strip_prefix(cwd).unwrap();
+    let relative_path = path
+        .strip_prefix(cwd)
+        .unwrap_or_else(|| panic!("Unhandled path: cwd: {}, path: {}", cwd, path));
 
     let dir_type = if relative_path.starts_with("/pages") || relative_path.starts_with("/src/pages")
     {
