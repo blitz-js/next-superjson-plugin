@@ -1,4 +1,7 @@
-# 🔌 NEXT SUPERJSON PLUGIN
+<h1 align="middle"> Next SuperJSON Plugin</h1>
+<h3 align="middle">🔌 SuperJSON Plugin for Next.js (SWC)</h3>
+
+### /pages (Pages Directory)
 
 ```jsx
 export default function Page({ date }) {
@@ -15,15 +18,21 @@ export const getServerSideProps = () => {
 };
 ```
 
-<p align="middle">
-<strong> SWC Plugin for Next.js (Canary Recommended)</strong>
-</p>
+- Allows pre-rendering functions to return props including [Non-JSON Values](https://github.com/blitz-js/superjson#parse)(Date, Map, Set..)
 
-This plugin allows the pre-rendering functions to return props **including complex objects(Date, Map, Set..) that cannot be serialized by standard JSON.**
+### /app (App Directory)
 
-**👀 See [how it works](#how-it-works)**
+```jsx
+// Use "data-superjson" attribute to pass non-serializable props to client components
+// No needs to change the propsType of Client Component (It's type-safe!)
 
-**Supported object types: [Here](https://github.com/blitz-js/superjson#parse)**
+export default function ServerComponent() {
+  const date = new Date();
+  return <ClientComponent date={date} data-superjson />;
+}
+```
+
+- Provides `data-superjson` attribute for [Server Component > Client Component Serialization](https://beta.nextjs.org/docs/rendering/server-and-client-components#passing-props-from-server-to-client-components-serialization).
 
 ## Usage
 
@@ -54,22 +63,6 @@ You can use the `excluded` option to exclude specific properties from serializat
 ['next-superjson-plugin', { excluded: ["someProp"] }],
 ```
 
-### Server Component -> Client Component
-
-```jsx
-export default function ServerComponent() {
-  const date = new Date();
-  return (
-    <>
-      <AnotherServerComponent date={date} />
-
-      {/* Use "data-superjson" attribute to pass non-serializable props to client components */}
-      <ClientComponent date={date} data-superjson />
-    </>
-  );
-}
-```
-
 ## How it works
 
 ```mermaid
@@ -78,19 +71,23 @@ sequenceDiagram
     participant SWC Plugin
     participant SuperJSON
     Next.js->>SWC Plugin: Request Transform
-    SWC Plugin->>SWC Plugin: Transform Pages <br> To Use SuperJSON
-    SWC Plugin->>Next.js: Take Pages
+    SWC Plugin->>SWC Plugin: Transform Pages/Components <br> To Use SuperJSON
+    SWC Plugin->>Next.js: Take Modules
     Next.js-->SuperJSON: Connected
     Next.js->>SuperJSON: Serialize Props <br> (Date, BigInt, Set, Map..)
-    Note over SWC Plugin: getInitialProps <br> getServerSideProps <br> getStaticProps
+    Note over SWC Plugin: getInitialProps <br> getServerSideProps <br> getStaticProps <br> Server Components
     SuperJSON->>Next.js: Deserialize Props
-    Note over SWC Plugin: Page Component
+    Note over SWC Plugin: Pages <br> Client Components
 
 ```
 
-## Contributing
+## Bug Report
 
-[Leave an issue](https://github.com/orionmiz/next-superjson-plugin/issues)
+⚠️ Keep in mind: SWC Plugin is still an experimental feature for Next.js
+
+Plugin always ensures compatibility with [Next.js Canary version](https://nextjs.org/docs/messages/opening-an-issue) only.
+
+[Leave an Issue](https://github.com/orionmiz/next-superjson-plugin/issues)
 
 ## Special Thanks
 
