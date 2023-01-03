@@ -22,6 +22,7 @@
     "./tools": "./dist/tools.js",
     "./client": "./dist/client.js"
   },
+  "preferUnplugged": true,
   "scripts": {
     "prepack": "tsc && cp target/wasm32-wasi/release/next_superjson.wasm ./dist",
     "prepare": "husky install"
