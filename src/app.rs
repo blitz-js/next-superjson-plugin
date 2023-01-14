@@ -104,13 +104,13 @@ impl VisitMut for AppTransformer {
         }
     }
 
-    fn visit_mut_jsx_opening_element(&mut self, elem: &mut JSXOpeningElement) {
+    fn visit_mut_jsx_element(&mut self, elem: &mut JSXElement) {
         elem.visit_mut_children_with(self);
 
         let mut found = false;
 
         // find and remove data-superjson directive
-        elem.attrs.retain(|attr_or_spread| {
+        elem.opening.attrs.retain(|attr_or_spread| {
             if let JSXAttrOrSpread::JSXAttr(JSXAttr {
                 name: JSXAttrName::Ident(id),
                 ..
@@ -127,6 +127,7 @@ impl VisitMut for AppTransformer {
         if found {
             // attrs -> obj props
             let list: Vec<PropOrSpread> = elem
+                .opening
                 .attrs
                 .take()
                 .into_iter()
@@ -169,7 +170,7 @@ impl VisitMut for AppTransformer {
                 .collect();
 
             // replace attrs
-            elem.attrs = vec![
+            elem.opening.attrs = vec![
                 JSXAttr {
                     name: Ident::new(DESERIALIZER_PROPS_ATTR.into(), DUMMY_SP).into(),
                     span: DUMMY_SP,
@@ -201,7 +202,7 @@ impl VisitMut for AppTransformer {
                     span: DUMMY_SP,
                     value: Some(
                         JSXExprContainer {
-                            expr: Box::new(elem.name.as_expr()).into(),
+                            expr: Box::new(elem.opening.name.as_expr()).into(),
                             span: DUMMY_SP,
                         }
                         .into(),
@@ -211,7 +212,12 @@ impl VisitMut for AppTransformer {
             ];
 
             // change element name
-            elem.name = Ident::new(DESERIALIZER_COMPONENT.into(), DUMMY_SP).into();
+            elem.opening.name = Ident::new(DESERIALIZER_COMPONENT.into(), DUMMY_SP).into();
+
+            if let Some(closing) = &mut elem.closing {
+                closing.name = Ident::new(DESERIALIZER_COMPONENT.into(), DUMMY_SP).into();
+            }
+
             self.transformed = true;
         }
     }
