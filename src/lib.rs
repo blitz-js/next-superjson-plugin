@@ -1,3 +1,5 @@
+use std::path::{Component, Path};
+
 use serde::Deserialize;
 use swc_core::{
     ecma::{ast::*, visit::*},
@@ -41,15 +43,27 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
     let path = &raw_path.replace('\\', "/");
 
     if let Some(relative_path) = path.strip_prefix(cwd) {
-        let dir_type =
-            if relative_path.starts_with("/pages") || relative_path.starts_with("/src/pages") {
-                DirType::Page
-            } else if relative_path.starts_with("/app") || relative_path.starts_with("/src/app") {
-                DirType::App
-            } else {
-                // not page or app
-                return program;
-            };
+        let mut is_page = false;
+
+        for component in Path::new(relative_path).components() {
+            match component {
+                Component::Normal(str) => match str.to_str().unwrap_or_default() {
+                    // skip non-source stuff
+                    "node_modules" | "dist" => {
+                        return program;
+                    }
+                    "pages" => {
+                        is_page = true;
+                        break;
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
+
+        // consider server components outside the app directory
+        let dir_type = if is_page { DirType::Page } else { DirType::App };
 
         let config = serde_json::from_str::<Config>(
             &_metadata
