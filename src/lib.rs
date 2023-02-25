@@ -42,7 +42,15 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
     let cwd = &raw_cwd.replace('\\', "/");
     let path = &raw_path.replace('\\', "/");
 
-    if let Some(relative_path) = path.strip_prefix(cwd) {
+    // overlapping prefix
+    let prefix = cwd
+        .chars()
+        .zip(path.chars())
+        .take_while(|(a, b)| a == b)
+        .map(|(a, _)| a)
+        .collect::<String>();
+
+    if let Some(relative_path) = path.strip_prefix(&prefix) {
         let mut is_page = false;
 
         for component in Path::new(relative_path).components() {
