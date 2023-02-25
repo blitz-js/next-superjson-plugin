@@ -49,7 +49,7 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
             match component {
                 Component::Normal(str) => match str.to_str().unwrap_or_default() {
                     // skip non-source stuff
-                    "node_modules" | "dist" => {
+                    "node_modules" => {
                         return program;
                     }
                     "pages" => {
