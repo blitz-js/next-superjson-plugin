@@ -9,7 +9,7 @@ export default function Page() {
         ...rest
     })} component={ClientComponent}>
 
-      <p >children</p>
+      <p>children</p>
 
     </SuperJSONComponent>;
 }
