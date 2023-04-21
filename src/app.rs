@@ -1,8 +1,7 @@
 use std::vec;
 
-use swc_common::util::take::Take;
 use swc_core::{
-    common::DUMMY_SP,
+    common::{util::take::Take, DUMMY_SP},
     ecma::{
         ast::*,
         utils::{is_valid_ident, prepend_stmts},

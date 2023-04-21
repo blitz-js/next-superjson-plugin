@@ -1,8 +1,9 @@
 use std::path::PathBuf;
-use swc_core::ecma::transforms::testing::{test_fixture, FixtureTestConfig};
-use swc_core::ecma::visit::as_folder;
-use swc_ecma_parser::{EsConfig, Syntax};
-
+use swc_core::ecma::{
+    parser::{EsConfig, Syntax},
+    transforms::testing::{test_fixture, FixtureTestConfig},
+    visit::as_folder,
+};
 use testing::fixture;
 
 use next_superjson::{app::transform_app, page::transform_page, Config};
