@@ -13,10 +13,10 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 serde = "1.0.144"
 serde_json = "1.0.85"
-swc_core = { version = "0.75.*", features = ["ecma_plugin_transform", "ecma_ast", "ecma_utils", "ecma_visit", "ecma_transforms", "ecma_parser", "common"] }
+swc_core = { version = "0.76.*", features = ["ecma_plugin_transform", "ecma_ast", "ecma_utils", "ecma_visit", "ecma_transforms", "ecma_parser", "common"] }
 
 [dev-dependencies]
-testing = "0.33.5"
+testing = "0.33.11"
 
 [profile.release]
 lto = true
