@@ -643,10 +643,10 @@ styled-jsx@5.1.0:
   dependencies:
     client-only "0.0.1"
 
-superjson@^1:
-  version "1.9.1"
-  resolved "https://registry.yarnpkg.com/superjson/-/superjson-1.9.1.tgz#e23bd2e8cf0f4ade131d6d769754cac7eaa8ab34"
-  integrity sha512-oT3HA2nPKlU1+5taFgz/HDy+GEaY+CWEbLzaRJVD4gZ7zMVVC4GDNFdgvAZt6/VuIk6D2R7RtPAiCHwmdzlMmg==
+superjson@^2:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/superjson/-/superjson-2.0.0.tgz#7abcbe6c1badc2e689ea62c375ca257666a68282"
+  integrity sha512-W3n+NJ7TFjaLle8ihIIvsr/bbuKpnxeatsyjmhy7iSkom+/cshaHziCQAWXrHGWJVQSQFDOuES6C3nSEvcbrQg==
   dependencies:
     copy-anything "^3.0.2"
 
