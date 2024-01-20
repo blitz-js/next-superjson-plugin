@@ -16,15 +16,21 @@
   "keywords": [
     "swc-plugin"
   ],
-  "main": "next_superjson.wasm",
+  "main": "./dist/next_superjson.wasm",
   "exports": {
     ".": "./dist/next_superjson.wasm",
-    "./tools": "./dist/tools.js",
-    "./client": "./dist/client.js"
+    "./tools": {
+      "require": "./dist/tools.js",
+      "import": "./dist/esm/tools.js"
+    },
+    "./client": {
+      "require": "./dist/client.js",
+      "import": "./dist/esm/client.js"
+    }
   },
   "preferUnplugged": true,
   "scripts": {
-    "prepack": "tsc && cp target/wasm32-wasi/release/next_superjson.wasm ./dist",
+    "prepack": "tsc && tsc -p ./tsconfig.esm.json && cp target/wasm32-wasi/release/next_superjson.wasm ./dist",
     "prepare": "husky install"
   },
   "files": [
