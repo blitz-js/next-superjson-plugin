@@ -7,8 +7,8 @@
     "rootDir": "tools",
     "outDir": "dist",
     "strict": true,
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "skipLibCheck": true
