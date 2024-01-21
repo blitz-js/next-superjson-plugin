@@ -16,7 +16,8 @@
   "keywords": [
     "swc-plugin"
   ],
-  "main": "next_superjson.wasm",
+  "type": "module",
+  "main": "./dist/next_superjson.wasm",
   "exports": {
     ".": "./dist/next_superjson.wasm",
     "./tools": "./dist/tools.js",

@@ -3,12 +3,14 @@
   "compilerOptions": {
     "declaration": true,
     "sourceMap": true,
-    "target": "ES5",
+    "target": "ESNext",
     "rootDir": "tools",
     "outDir": "dist",
     "strict": true,
-    "moduleResolution": "node",
-    "jsx": "react",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
     "skipLibCheck": true
   }
 }
