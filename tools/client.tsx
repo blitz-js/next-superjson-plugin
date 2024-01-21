@@ -3,7 +3,7 @@
 import { SuperJSONProps, withSuperJSONPage } from "./tools";
 import * as React from "react";
 
-export default function SuperJSONComponent<P>({
+export default function SuperJSONComponent<P extends JSX.IntrinsicAttributes>({
   component,
   props,
   children

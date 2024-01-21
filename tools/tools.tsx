@@ -1,15 +1,15 @@
 // original tool source from 'babel-plugin-superjson-next'
 
-import * as hoistNonReactStatics from "hoist-non-react-statics";
+import hoistNonReactStatics from "hoist-non-react-statics";
 import type { GetServerSideProps } from "next";
-import * as React from "react";
+import React from "react";
 import SuperJSON from "superjson";
 
 export type SuperJSONProps<P> = P & {
   _superjson?: ReturnType<typeof SuperJSON.serialize>["meta"];
 };
 
-export function withSuperJSONProps<P>(
+export function withSuperJSONProps<P extends JSX.IntrinsicAttributes>(
   gssp: GetServerSideProps<P>,
   exclude: string[] = []
 ): GetServerSideProps<SuperJSONProps<P>> {
@@ -87,7 +87,7 @@ export function deserializeProps<P>(serializedProps: SuperJSONProps<P>): P {
   return SuperJSON.deserialize({ json: props as any, meta: _superjson });
 }
 
-export function withSuperJSONPage<P>(
+export function withSuperJSONPage<P extends JSX.IntrinsicAttributes>(
   Page: React.ComponentType<P>
 ): React.ComponentType<SuperJSONProps<P>> {
   function WithSuperJSON(serializedProps: SuperJSONProps<P>) {
