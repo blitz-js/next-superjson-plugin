@@ -10,7 +10,8 @@ use crate::page::{
 
 pub fn superjson_import_decl(superjson_import_name: &str) -> ModuleItem {
     ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
-        asserts: None,
+        with: None,
+        phase: ImportPhase::Evaluation,
         span: DUMMY_SP,
         type_only: false,
         specifiers: vec![ImportSpecifier::Named(ImportNamedSpecifier {
@@ -61,7 +62,8 @@ pub fn temp_props_item(excluded: ExprOrSpread) -> ModuleItem {
 
 pub fn temp_import_item(imported: ModuleExportName, local: &str, src: &mut Str) -> ModuleItem {
     ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
-        asserts: None,
+        with: None,
+        phase: ImportPhase::Evaluation,
         span: DUMMY_SP,
         specifiers: vec![ImportSpecifier::Named(ImportNamedSpecifier {
             imported: Some(imported),
