@@ -255,7 +255,7 @@ impl VisitMut for PageTransformer {
 
                                 new_items.push(ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(
                                     NamedExport {
-                                        asserts: None,
+                                        with: None,
                                         span: DUMMY_SP,
                                         specifiers: vec![ExportSpecifier::Named(
                                             ExportNamedSpecifier {
