@@ -535,8 +535,8 @@ impl VisitMut for PageTransformer {
     fn visit_mut_assign_expr(&mut self, a: &mut AssignExpr) {
         a.visit_mut_children_with(self);
 
-        if a.left.is_expr() {
-            if let Some(mut expr) = a.left.take().expr() {
+        if a.left.is_simple() {
+            if let Some(mut expr) = a.left.take().simple() {
                 if let Some(MemberExpr { prop, .. }) = expr.as_mut_member() {
                     prop.visit_mut_children_with(self);
                 }
@@ -549,7 +549,7 @@ impl VisitMut for PageTransformer {
                     self.has_init_props = false;
                 }
 
-                a.left = PatOrExpr::Expr(expr);
+                a.left = AssignTarget::Simple(expr);
             }
         }
     }
